@@ -57,7 +57,7 @@ export default function Page() {
         <header className="flex h-16 shrink-0 items-center gap-2 px-4 border-b border-neutral-800 bg-[#121212]">
           <SidebarTrigger className="-ml-1" />
           <Separator orientation="vertical" className="mr-2 data-[orientation=vertical]:h-4" />
-          <div className="flex-1 max-w-lg">
+          <div className="flex-1 w-full">
             <Autocomplete
               disablePortal
               freeSolo
@@ -122,6 +122,7 @@ export default function Page() {
                     "& .MuiInputBase-input": { color: "#fff" },
                     "& .MuiInputLabel-root": { color: "#999" },
                     "& .MuiInputLabel-root.Mui-focused": { color: "#2596be" },
+                    "& .MuiSvgIcon-root": {color: "#ffffff"},
                   }}
                 />
               )}
