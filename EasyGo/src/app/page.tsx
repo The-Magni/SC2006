@@ -9,7 +9,7 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar"
 import dynamic from "next/dynamic"
-import {type OneMapSearchResult, fetchResults} from "@/lib/onemapAutoFill"
+import {type OneMapSearchResult, fetchResults} from "@/lib/onemap/onemapAutoFill"
 import {  useState, useMemo, useRef } from "react"
 import Autocomplete from "@mui/material/Autocomplete"
 import debounce from "lodash/debounce"
