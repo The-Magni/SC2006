@@ -1,4 +1,3 @@
-// app/api/onemap/route/route.ts
 import { NextResponse } from "next/server"
 
 const BASE_URL = "https://www.onemap.gov.sg/api/public/routingsvc/route"

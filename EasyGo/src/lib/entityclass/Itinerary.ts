@@ -40,7 +40,6 @@ export class Itinerary {
           leg.mode === "SUBWAY" || leg.mode === "BUS"
             ? ` (${leg.routeName ?? leg.mode})`
             : ""
-
         return `${i + 1}. ${leg.mode}${routeInfo}: ${leg.from} → ${leg.to} (${dur}, ${dist})`
       })
       .join("\n")
