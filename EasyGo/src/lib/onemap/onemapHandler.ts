@@ -13,22 +13,30 @@ export async function getRoute(
   let url = ""
 
   if (mode === "pt") {
-    url = `/api/onemap/route?start=${startLat},${startLng}`
-        + `&end=${endLat},${endLng}`
-        + `&routeType=pt`
-        + `&date=${date}`
-        + `&time=${curtime}`
-        + `&mode=TRANSIT`
-        + `&maxWalkDistance=2000`
-        + `&numItineraries=5`
+    // 🚌 Public transport route — requires mode=TRANSIT/BUS/RAIL
+    url =
+      `/api/onemap/route?start=${startLat},${startLng}` +
+      `&end=${endLat},${endLng}` +
+      `&routeType=pt` +
+      `&date=${date}` +
+      `&time=${curtime}` +
+      `&mode=TRANSIT` + // ✅ mandatory!
+      `&maxWalkDistance=2000` +
+      `&numItineraries=5`
   } else {
-    url = `/api/onemap/route?start=${startLat},${startLng}`
-        + `&end=${endLat},${endLng}`
-        + `&routeType=${mode}`
+    // 🚗 🚶‍♂️ 🚴 drive / walk / cycle routes
+    url =
+      `/api/onemap/route?start=${startLat},${startLng}` +
+      `&end=${endLat},${endLng}` +
+      `&routeType=${mode}`
   }
 
   const res = await fetch(url)
-  if (!res.ok) throw new Error(`Local API failed: ${res.status}`)
+  if (!res.ok) {
+    const errText = await res.text()
+    console.error(`❌ OneMap API failed: ${res.status} →`, errText)
+    throw new Error(`OneMap API failed (${res.status})`)
+  }
 
   return await res.json()
 }
