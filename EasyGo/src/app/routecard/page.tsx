@@ -3,9 +3,10 @@
 import { Button } from "@/components/ui/button";
 import { getRoute } from "@/lib/onemap/onemapHandler"
 import { ItineraryController } from "@/lib/controllers/itinerary-controller"
+import { TrainRouteLeg } from "@/lib/entityclass/TrainRouteLeg"
 import { useState } from "react"
 
-
+//this just tests all the functionality of the route retrieval
 export default function Page() {
  async function testDrivingItinerary() {
   console.clear()
@@ -81,6 +82,11 @@ async function testItineraryClasses() {
         console.log("To:", leg.end?.name, leg.end?.lat, leg.end?.lon)
         console.log("Geometry length:", leg.geometry?.length)
         console.log("Description:", leg.getDescription())
+        if (leg instanceof TrainRouteLeg) {
+          console.log("Train Line:", leg.routeName)
+          console.log("code from to:", leg.fromStation?.getCode, "→", leg.toStation?.getCode)
+
+        }
         console.groupEnd()
       })
     })
@@ -88,7 +94,6 @@ async function testItineraryClasses() {
     // Test the summarizer
     console.log("HTML Summary:\n", ItineraryController.summarize(itineraries))
 
-    // 5️⃣ Leaflet polyline test data
     if (itineraries.length > 0) {
       const lines = itineraries[0].getAllPolylines()
       console.log("First itinerary polylines:", lines)
