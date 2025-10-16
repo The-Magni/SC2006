@@ -1,5 +1,4 @@
 import { RouteLeg } from "../entityclass/RouteLeg";
-import { calCrow } from "../utils";
 
 interface CarparkData {
     CarParkID: string;
@@ -11,6 +10,13 @@ interface CarparkData {
     Agency: string;
 }
 
+interface StationData {
+    Station: string;
+    StartTime: string;
+    EndTime: string;
+    CrowdLevel: string;
+}
+
 interface Incident {
     type: string;
     latitude: number;
@@ -19,18 +25,31 @@ interface Incident {
 }
 
 export class ExternalApiHandler {
+    private lta_access_token: string;
+
+    private async getRainfall(route: RouteLeg) {
+
+    }
+
+    private async getHeatStressLevel(route: RouteLeg) {
+        
+    }
+
+    public constructor() {
+        this.lta_access_token = process.env.LTA_ACCESS_TOKEN ?? '';
+    }
+
     public async getTrafficIncident(route: RouteLeg): Promise<Incident[]> {
         try {
-            const access_token = process.env.LTA_ACCESS_TOKEN;
             const url = 'https://datamall2.mytransport.sg/ltaodataservice/TrafficIncidents';
-            if (!access_token)
+            if (!this.lta_access_token)
                 throw new Error('No access token for LTA Datamall');
             const response = await fetch(
                 url, {
                     method: 'GET',
                     headers: {
                         'Content-Type': 'application/json',
-                        'AccountKey': access_token,
+                        'AccountKey': this.lta_access_token,
                     }
                 }
             );
@@ -53,39 +72,50 @@ export class ExternalApiHandler {
             }
         });
         const data = await response.json();
+
     }
 
-    public async getNearestCarpark(latitude: number, longtitude: number) {
-        try {
-            const access_token = process.env.LTA_ACCESS_TOKEN;
-            const url = 'https://datamall2.mytransport.sg/ltaodataservice/CarParkAvailabilityv2';
-            if (!access_token)
-                throw new Error('No access token for LTA Datamall');
-            const response = await fetch(
-                url, {
-                    method: 'GET',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'AccountKey': access_token,
-                    }
+    public async fetchCarparkAvailability(latitude: number, longtitude: number): Promise<CarparkData[]> {
+        const url = 'https://datamall2.mytransport.sg/ltaodataservice/CarParkAvailabilityv2';
+        if (!this.lta_access_token)
+            throw new Error('No access token for LTA Datamall');
+        const response = await fetch(
+            url, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'AccountKey': this.lta_access_token,
                 }
-            );
-            if (!response.ok) {
-                throw new Error('Fail to fetch carpark availability API');
             }
-            const data = await response.json();
-            const allCarParks: CarparkData[] = data.value;
-            let minDistance = Infinity;
-            allCarParks.forEach(carparkData => {
-                const location = carparkData.Location;
-                const [lat, long] = location.split(' ').map(parseFloat);
-                const distance = calCrow(lat, long, latitude, longtitude);
-                if (distance < minDistance)
-                    minDistance = distance
-            })
-
-        } catch(e) {
-            console.error(e);
+        );
+        if (!response.ok) {
+            throw new Error('Fail to fetch carpark availability API');
         }
+        const data = await response.json();
+        const carparks: CarparkData[] = data.value;
+        return carparks;
     }
+
+    public async fetchPlatformDensity(trainLine: string): Promise<StationData[]> {
+        const baseUrl = 'https://datamall2.mytransport.sg/ltaodataservice/PCDRealTime';
+        const params = new URLSearchParams({
+            'TrainLine': trainLine,
+        });
+        const url = `${baseUrl}?${params.toString()}`;
+        if (!this.lta_access_token) 
+            throw new Error('No LTA access token!');
+        
+        const response = await fetch(url, {
+            method: 'GET',
+            headers: {
+                'AccountKey': this.lta_access_token,
+            }
+        });
+        if (!response.ok)
+            throw new Error('Fail to request for platform density');
+
+        const data = await response.json();   
+        const stationDataList: StationData[] = data.value;
+        return stationDataList;      
+    }  
 }

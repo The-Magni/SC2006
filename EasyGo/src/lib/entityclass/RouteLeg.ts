@@ -7,7 +7,7 @@ export class RouteLeg {
   duration: number
   start?: { name: string; lat: number; lon: number }
   end?: { name: string; lat: number; lon: number }
-  geometry: [number, number][] = []
+  geometry: LatLng[] = []
   description = ""
 
   constructor(data: any) {

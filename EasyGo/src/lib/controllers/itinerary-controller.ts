@@ -4,6 +4,7 @@ import { BusRouteLeg } from "../entityclass/BusRouteLeg"
 import { TrainRouteLeg } from "../entityclass/TrainRouteLeg"
 import { WalkingRouteLeg } from "../entityclass/WalkingRouteLeg"
 import { DrivingRouteLeg } from "../entityclass/DrivingRouteLeg"
+<<<<<<< HEAD
 
 import { BaseItinerary } from "../entityclass/BaseItinerary"
 import { PublicItinerary } from "../entityclass/PublicItinerary"
@@ -23,6 +24,53 @@ export class ItineraryController {
 
   static parseResponse(json: any, mode: "pt" | "drive" | "walk" | "cycle" = "pt"): BaseItinerary[] {
     if (!json) throw new Error("Empty OneMap response")
+=======
+import { SimpleWalkingRouteLeg } from "../entityclass/SimpleWalkingRouteLeg"
+import { ExternalApiHandler } from "../boundary/ExternalApiHandler"
+import { calCrow } from "../utils"
+
+
+export class ItineraryController {
+	private api: ExternalApiHandler;
+
+	public constructor(api: ExternalApiHandler) {
+		this.api = api;
+	}
+
+	public async getNearestCarpark(itinery: Itinerary): Promise<[number, [number, number]]> {
+		const destination = itinery.legs[itinery.legs.length - 1].end;
+		if (!destination)
+			return [-1, [-1, -1]];
+		const latitude = destination.lat;
+		const longtitude = destination.lon;
+        const allCarParks = await this.api.fetchCarparkAvailability(latitude, longtitude);
+        let minDistance = Infinity;
+        let nearestLocation: [number, number] = [Infinity, Infinity];
+        allCarParks.forEach(carparkData => {
+            const location = carparkData.Location;
+            const [lat, long] = location.split(' ').map(parseFloat);
+            const distance = calCrow(lat, long, latitude, longtitude);
+            if (distance < minDistance) {
+                minDistance = distance;
+                nearestLocation = [lat, long];
+            }
+        });
+
+        if (Number.isFinite(minDistance)) 
+            throw new Error('No carpark data found');
+        return [minDistance, nearestLocation];
+
+    }
+	
+	public async getPlatformDensity(itinery: Itinerary) {
+		
+	}
+
+
+  static parseResponse(json: any, mode: "pt" | "drive" | "walk" | "cycle" = "pt"): Itinerary[] {
+	console.log(json)
+	if (!json) throw new Error("Empty OneMap response")
+>>>>>>> e24b065 (resolve merge conflict)
 
     if (mode === "pt" && json.plan) {
       return this.parsePublicTransport(json)
@@ -32,7 +80,20 @@ export class ItineraryController {
       console.warn("Unknown OneMap format or missing data:", json)
       return []
     }
+<<<<<<< HEAD
   }
+=======
+
+	// OneMap drive/walk/cycle responses have route_summary + route_geometry
+	if (json.route_summary && json.route_geometry) {
+		return this.parseSimpleRoute(json, mode)
+	
+	}
+
+	console.warn("Unknown or unsupported OneMap format:", json)
+	return []
+}
+>>>>>>> e24b065 (resolve merge conflict)
 
   static parsePublicTransport(json: any): PublicItinerary[] {
     const itinerariesRaw = json.plan?.itineraries ?? []
@@ -165,4 +226,46 @@ export class ItineraryController {
 
     return summaryText
   }
+}
+
+
+
+// Utility functions for managing leaflet coordinates and polyline
+export function parseCoords(coordStr: string): LatLng {
+  if (!coordStr) return { lat: 0, lng: 0 }
+  const [lat, lng] = coordStr.split(",").map(Number)
+  return { lat, lng }
+}
+
+
+export function decodePolyline(encoded: string): LatLng[] {
+  let index = 0,
+    lat = 0,
+    lng = 0;
+  const coordinates: LatLng[] = []
+
+  while (index < encoded.length) {
+    let b, shift = 0, result = 0
+    do {
+      b = encoded.charCodeAt(index++) - 63
+      result |= (b & 0x1f) << shift
+      shift += 5
+    } while (b >= 0x20)
+    const deltaLat = (result & 1) ? ~(result >> 1) : (result >> 1)
+    lat += deltaLat
+
+    shift = 0
+    result = 0
+    do {
+      b = encoded.charCodeAt(index++) - 63
+      result |= (b & 0x1f) << shift
+      shift += 5
+    } while (b >= 0x20)
+    const deltaLng = (result & 1) ? ~(result >> 1) : (result >> 1)
+    lng += deltaLng
+
+    coordinates.push({ lat: lat / 1e5, lng: lng / 1e5 })
+  }
+
+  return coordinates
 }

@@ -35,13 +35,15 @@ export class ConvenienceScore {
     }
 
     public computeScore(itineraryList: Itinerary[]): void {
-        const normalizedDurationScore = this.normalizeValue(itineraryList, i => i.totalDurationMin);
+        const normalizedDurationScore = this.normalizeValue(itineraryList, i => i.totalDuration);
         const normalizedFareScore = this.normalizeValue(itineraryList, i => i.totalFare);
         const normalizedNoTransferScore = this.normalizeValue(itineraryList, i => i.totalTransfers);
-        
-        const totalScore = this.userPreference.durationWeight * normalizedDurationScore
-        + this.userPreference.fareWeight * normalizedFareScore
-        + this.userPreference.noTransferWeight * normalizedNoTransferScore;
+        const normalizedWalkingDistanceScore = this.normalizeValue(itineraryList, i => i.getWalkingDistance());
+
+        const totalScore = this.userPreference.durationWeight * (1 - normalizedDurationScore)
+        + this.userPreference.fareWeight * (1 - normalizedFareScore)
+        + this.userPreference.noTransferWeight * (1 - normalizedNoTransferScore)
+        + this.userPreference.walkingDistanceWeight * (1 - normalizedWalkingDistanceScore);
 
         this.score = totalScore / this.userPreference.getTotalWeight();
     }

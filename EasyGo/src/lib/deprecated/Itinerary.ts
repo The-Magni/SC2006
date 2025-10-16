@@ -23,6 +23,7 @@ export class Itinerary {
     this.totalTransfers = 0
     this.userMode = userMode
 
+    this.totalFare = 0; // init first to be 0 for testing of conveniencescore, should be changed later
   }
 
   get summary(): string {
@@ -39,6 +40,16 @@ export class Itinerary {
     return this.legs
       .filter((l) => l.geometry)
       .map((l) => l.geometry!.map((p) => [p.lat, p.lng]))
+  }
+
+  public getWalkingDistance(): number {
+    let walkingDistance = 0;
+    for (const leg of this.legs) {
+      if (leg instanceof WalkingRouteLeg) {
+        walkingDistance += leg.distance;
+      }
+    }
+    return walkingDistance;
   }
 
 
