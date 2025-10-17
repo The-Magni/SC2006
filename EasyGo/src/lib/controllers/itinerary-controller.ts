@@ -13,7 +13,7 @@ export class ItineraryController {
     if (!json) throw new Error("Empty OneMap response")
 
     if (mode === "pt" && json.plan) {
-      return this.parsePublicTransport(json)
+      return this.parsePublicTransport(json, mode)
     }
 
       // OneMap drive/walk/cycle responses have route_summary + route_geometry
@@ -27,14 +27,14 @@ export class ItineraryController {
   }
 
 // the controller parses the two types of return json, the public transport one and the simple route (walk / drive) one
-  static parsePublicTransport(json: any): Itinerary[] {
+  static parsePublicTransport(json: any, mode: "pt" | "drive" | "walk" | "cycle" = "pt"): Itinerary[] {
+    
     const itinerariesRaw = json.plan?.itineraries ?? []
     const itineraries: Itinerary[] = []
 
     for (const itinerary of itinerariesRaw) {
       const legsRaw = itinerary.legs ?? []
       const legs: RouteLeg[] = []
-
       for (const leg of legsRaw) {
         const mode = leg.mode?.toUpperCase() ?? ""
         console.log(`Mode detected: ${mode} | Route: ${leg.route}`)
@@ -48,6 +48,7 @@ export class ItineraryController {
         } else {
           legs.push(new RouteLeg(leg))
         }
+
       }
 
       const iti = new Itinerary(legs)
@@ -55,7 +56,7 @@ export class ItineraryController {
       iti.totalDistance = itinerary.walkDistance ?? 0
       iti.totalTransfers = itinerary.transfers ?? 0
       iti.totalFare = parseFloat(itinerary.fare ?? "0")
-
+      iti.userMode = mode
       itineraries.push(iti)
     }
 
@@ -77,7 +78,7 @@ static parseSimpleRoute(json: any, mode: "drive" | "walk" | "cycle"): Itinerary[
   iti.totalDistance = json.route_summary?.total_distance ?? 0
   iti.totalTransfers = legs.length - 1
   iti.totalFare = 0
-
+  iti.userMode = mode
   return [iti]
 }
 

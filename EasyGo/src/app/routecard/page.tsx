@@ -25,6 +25,7 @@ export default function Page() {
       console.log("Distance (m):", iti.totalDistance)
       console.log("Transfers:", iti.totalTransfers)
       console.log("Leg count:", iti.legs.length)
+      console.log("User input mode", iti.userMode)
       console.groupEnd()
 
       iti.legs.forEach((leg, j) => {
@@ -71,6 +72,7 @@ async function testItineraryClasses() {
       console.log("Fare:", iti.totalFare)
       console.log("Leg count:", iti.legs.length)
       console.log("Summary HTML:", iti.summary)
+      console.log("User input mode", iti.userMode)
       console.groupEnd()
 
       // Check each leg class type and geometry

@@ -14,12 +14,15 @@ export class Itinerary {
   totalDistance: number
   totalTransfers: number
   totalFare?: number
+  userMode?: string
 
-  constructor(legs: RouteLeg[]) {
+  constructor(legs: RouteLeg[], userMode?: string) {
     this.legs = legs
     this.totalDuration = legs.reduce((s, l) => s + (l.duration || 0), 0)
     this.totalDistance = legs.reduce((s, l) => s + (l.distance || 0), 0)
     this.totalTransfers = Math.max(legs.length - 1, 0)
+    this.userMode = userMode
+
   }
 
   get summary(): string {
