@@ -20,9 +20,18 @@ export class ConvenienceScoreFilterPreference {
         this.fareWeight = fareWeight;
     }
 
-    public getTotalWeight(): number {
-        return this.durationWeight + this.walkingDistanceWeight + this.noTransferWeight
-        + this.carparkAvailabilityWeight + this.busWaitTimeWeight + this.platformDensityWeight
-        + this.fareWeight;
+    public getTotalWeightWalking(): number {
+        return this.durationWeight;
+    }
+
+    public getTotalWeightPublicTransport(): number {
+        return this.durationWeight + this.walkingDistanceWeight +
+        this.noTransferWeight + this.busWaitTimeWeight + 
+        this.platformDensityWeight + this.fareWeight;
+    }
+
+    public getTotalWeightDriving(): number {
+        return this.durationWeight + this.walkingDistanceWeight
+        + this.carparkAvailabilityWeight;
     }
 }

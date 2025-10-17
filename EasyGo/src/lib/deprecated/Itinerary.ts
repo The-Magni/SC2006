@@ -13,7 +13,7 @@ export class Itinerary {
   totalDuration: number
   totalDistance: number
   totalTransfers: number
-  totalFare?: number
+  totalFare: number
   userMode?: string
 
   constructor(legs: RouteLeg[], userMode?: string) {

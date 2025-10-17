@@ -44,7 +44,5 @@ export class ConvenienceScore {
         + this.userPreference.fareWeight * (1 - normalizedFareScore)
         + this.userPreference.noTransferWeight * (1 - normalizedNoTransferScore)
         + this.userPreference.walkingDistanceWeight * (1 - normalizedWalkingDistanceScore);
-
-        this.score = totalScore / this.userPreference.getTotalWeight();
     }
 }
