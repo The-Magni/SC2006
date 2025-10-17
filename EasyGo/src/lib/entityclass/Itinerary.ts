@@ -20,7 +20,7 @@ export class Itinerary {
     this.legs = legs
     this.totalDuration = legs.reduce((s, l) => s + (l.duration || 0), 0)
     this.totalDistance = legs.reduce((s, l) => s + (l.distance || 0), 0)
-    this.totalTransfers = Math.max(legs.length - 1, 0)
+    this.totalTransfers = 0
     this.userMode = userMode
 
   }
