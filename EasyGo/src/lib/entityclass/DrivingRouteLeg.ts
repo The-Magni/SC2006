@@ -1,5 +1,5 @@
 import { RouteLeg } from "./RouteLeg"
-import { decodePolyline } from "../controllers/itinerary-controller"
+import { decodePolyline } from "../controllers/leaflethelper-controller"
 
 export class DrivingRouteLeg extends RouteLeg {
   instruction: string
@@ -10,6 +10,7 @@ export class DrivingRouteLeg extends RouteLeg {
 
   constructor(data: any, fullGeometry?: string) {
     super({ mode: "DRIVE" })
+    console.log("i am in the consttructor now", data)
 
     this.instruction = data[0] ?? ""
     this.roadName = data[1] ?? "Unnamed Road"

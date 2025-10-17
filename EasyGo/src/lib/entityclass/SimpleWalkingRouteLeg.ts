@@ -1,5 +1,5 @@
 import { RouteLeg } from "./RouteLeg"
-import { decodePolyline } from "../controllers/itinerary-controller"
+import { decodePolyline } from "../controllers/leaflethelper-controller"
 
 export class SimpleWalkingRouteLeg extends RouteLeg {
   instruction: string

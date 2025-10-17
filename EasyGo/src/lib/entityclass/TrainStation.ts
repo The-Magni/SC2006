@@ -1,5 +1,3 @@
-// lib/models/TrainStation.ts
-
 export class TrainStation {
   name: string
   code: string

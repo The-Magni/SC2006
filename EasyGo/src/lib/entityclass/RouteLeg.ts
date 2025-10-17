@@ -1,5 +1,5 @@
 export type LatLng = { lat: number; lng: number }
-import { decodePolyline } from "../controllers/itinerary-controller"
+import { decodePolyline } from "../controllers/leaflethelper-controller"
 
 export class RouteLeg {
   mode: string

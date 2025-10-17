@@ -16,6 +16,6 @@ export class TrainRouteLeg extends RouteLeg {
     this.fromStation = new TrainStation(fromName, data.from?.stopCode ?? "")
     this.toStation = new TrainStation(toName, data.to?.stopCode ?? "")
 
-    this.description = `🚇 Take ${this.routeName} from ${this.fromStation.getName} → ${this.toStation.getName}`
+    this.description = `Take ${this.routeName} from ${this.fromStation.getName} → ${this.toStation.getName}`
   }
 }

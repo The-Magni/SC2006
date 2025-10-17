@@ -1,11 +1,11 @@
 // lib/models/Itinerary.ts
-import { RouteLeg } from "./RouteLeg"
-import { TrainRouteLeg } from "./TrainRouteLeg"
-import { DrivingRouteLeg } from "./DrivingRouteLeg"
-import { WalkingRouteLeg } from "./WalkingRouteLeg"
-import { SimpleWalkingRouteLeg } from "./SimpleWalkingRouteLeg"
+import { RouteLeg } from "../entityclass/RouteLeg"
+import { TrainRouteLeg } from "../entityclass/TrainRouteLeg"
+import { DrivingRouteLeg } from "../entityclass/DrivingRouteLeg"
+import { WalkingRouteLeg } from "../entityclass/WalkingRouteLeg"
+import { SimpleWalkingRouteLeg } from "../entityclass/SimpleWalkingRouteLeg"
 
-import { BusRouteLeg } from "./BusRouteLeg"
+import { BusRouteLeg } from "../entityclass/BusRouteLeg"
 import { decodePolyline } from "../controllers/itinerary-controller"
 
 export class Itinerary {
