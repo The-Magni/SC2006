@@ -20,62 +20,64 @@ interface StationData {
 interface Incident {
     type: string;
     latitude: number;
-    longtitude: number;
+    longitude: number;
     message: string;
+}
+
+interface AreaMetadata {
+    name: string;
+    label_location: {
+        latitude: number;
+        longitude: number
+    }
+}
+
+interface WeatherData {
+    area: string;
+    forecast: string;
 }
 
 export class ExternalApiHandler {
     private lta_access_token: string;
 
-    private async getRainfall(route: RouteLeg) {
-
-    }
-
-    private async getHeatStressLevel(route: RouteLeg) {
-        
-    }
-
     public constructor() {
         this.lta_access_token = process.env.LTA_ACCESS_TOKEN ?? '';
     }
 
-    public async getTrafficIncident(route: RouteLeg): Promise<Incident[]> {
-        try {
-            const url = 'https://datamall2.mytransport.sg/ltaodataservice/TrafficIncidents';
-            if (!this.lta_access_token)
-                throw new Error('No access token for LTA Datamall');
-            const response = await fetch(
-                url, {
-                    method: 'GET',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'AccountKey': this.lta_access_token,
-                    }
+    public async fetchTrafficIncident(): Promise<Incident[]> {
+        const url = 'https://datamall2.mytransport.sg/ltaodataservice/TrafficIncidents';
+        if (!this.lta_access_token)
+            throw new Error('No access token for LTA Datamall');
+        const response = await fetch(
+            url, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'AccountKey': this.lta_access_token,
                 }
-            );
-            if (response.ok) {
-                throw new Error('Error fetch data');
             }
-            const incidents = await response.json() as Incident[];
-            return incidents;
-        } catch (e) {
-            console.error(e);
-            return [];
+        );
+        if (response.ok) {
+            throw new Error('Error fetch data');
         }
+        const incidents = await response.json() as Incident[];
+        return incidents;
     }
 
-    public async getWeatherData(route: RouteLeg) {
-        const url = 'https://api-open.data.gov.sg/v2/real-time/api/rainfall';
+    public async fetchWeatherData(): Promise<[AreaMetadata[], WeatherData[]]> {
+        const url = 'https://api-open.data.gov.sg/v2/real-time/api/two-hr-forecast';
         const response = await fetch(url, {
             headers: {
                 'X-Api-Key': 'YOUR_SECRET_TOKEN'
             }
         });
         const data = await response.json();
-
+        const metadata: AreaMetadata[] = data.data.area_metadata;
+        const forecast: WeatherData[] = data.items.forecasts;
+        return [metadata, forecast];
     }
 
-    public async fetchCarparkAvailability(latitude: number, longtitude: number): Promise<CarparkData[]> {
+    public async fetchCarparkAvailability(): Promise<CarparkData[]> {
         const url = 'https://datamall2.mytransport.sg/ltaodataservice/CarParkAvailabilityv2';
         if (!this.lta_access_token)
             throw new Error('No access token for LTA Datamall');

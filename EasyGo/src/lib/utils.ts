@@ -27,6 +27,32 @@ export function getNearestLocation(locations: [number, number][], geometry: LatL
     return locations[minIndex];
 }
 
+export function calDistancePointLine(pointLat: number, pointLon: number,
+	lineLat1: number, lineLon1: number, lineLat2: number, lineLon2: number
+): number {
+	const reFlat = (pointLat + lineLat1 + lineLat2) / 3;
+	const [x0, y0] = latLon2xy(pointLat, pointLon, reFlat);
+	const [x1, y1] = latLon2xy(lineLat1, lineLon1, reFlat);
+	const [x2, y2] = latLon2xy(lineLat2, lineLon2, reFlat);
+
+	// line equation
+	const A = y2 - y1;
+	const B = x1 - x2;
+	const C = -A * x1 - B * y1;
+	return Math.abs(A*x0 + B*y0 + C) / Math.sqrt(A*A + B*B);
+}
+
+export function getStopNumber(trainStop: string) {
+	return parseInt(trainStop.match(/\d+/)?.[0] || '');
+}
+
+function latLon2xy(lat: number, lon: number, reFlat: number): [number, number] {
+	const R = 6371; // km
+	const x = R * toRad(lon) * Math.cos(toRad(reFlat));
+	const y = R * toRad(lat);
+	return [x, y];
+}
+
 function calDistance(lat: number, long: number, geometry: LatLng[]): number {
     let totalDistance = 0;
     geometry.forEach(point => {
