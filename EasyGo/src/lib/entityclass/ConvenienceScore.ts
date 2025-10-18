@@ -34,15 +34,43 @@ export class ConvenienceScore {
         return this.score;
     }
 
-    public computeScore(itineraryList: Itinerary[]): void {
+    public computeScore(itineraryList: Itinerary[]): void {        
         const normalizedDurationScore = this.normalizeValue(itineraryList, i => i.totalDuration);
-        const normalizedFareScore = this.normalizeValue(itineraryList, i => i.totalFare);
-        const normalizedNoTransferScore = this.normalizeValue(itineraryList, i => i.totalTransfers);
         const normalizedWalkingDistanceScore = this.normalizeValue(itineraryList, i => i.getWalkingDistance());
 
-        const totalScore = this.userPreference.durationWeight * (1 - normalizedDurationScore)
-        + this.userPreference.fareWeight * (1 - normalizedFareScore)
-        + this.userPreference.noTransferWeight * (1 - normalizedNoTransferScore)
-        + this.userPreference.walkingDistanceWeight * (1 - normalizedWalkingDistanceScore);
+        // filter itinerary based on mode of transport
+        const ptItineraryList: Itinerary[] = [], drivingItineraryList: Itinerary[] = [];
+        for (const itinerary of itineraryList) {
+            switch (itinerary.userMode) {
+                case 'pt':
+                    ptItineraryList.push(itinerary);
+                    break;
+                case 'drive':
+                    drivingItineraryList.push(itinerary);
+                    break;
+            }
+        }
+
+
+        switch (this.itinerary.userMode) {
+            case 'pt':
+                const normalizedNoTransferScore = this.normalizeValue(ptItineraryList, i => i.totalTransfers);
+                const normalizedFareScore = this.normalizeValue(ptItineraryList, i => i.totalFare);
+                const normalizedBusWaitTimeScore = 0; // later will be assigned
+                this.score = this.userPreference.durationWeight * (1 - normalizedDurationScore) +
+                this.userPreference.walkingDistanceWeight + (1 - normalizedWalkingDistanceScore) +
+                this.userPreference.noTransferWeight * (1 - normalizedNoTransferScore) +
+                this.userPreference.fareWeight * (1 - normalizedFareScore) +
+                this.userPreference.busWaitTimeWeight * (1 - normalizedBusWaitTimeScore);
+                this.score /= this.userPreference.getTotalWeightPublicTransport();
+                break;
+            case 'walk':
+                this.score = this.userPreference.durationWeight * normalizedDurationScore
+                + this.userPreference.walkingDistanceWeight * normalizedWalkingDistanceScore;
+                this.score /= this.userPreference.getTotalWeightWalking();
+                break;
+            case 'drive':
+                break;
+        }
     }
 }
