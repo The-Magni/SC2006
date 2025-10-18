@@ -1,5 +1,4 @@
 import { Incident } from "../boundary/ExternalApiHandler"
-import { ConvenienceScore, ConvenienceScoreFactory } from "./ConvenienceScore"
 import { RouteLeg } from "./RouteLeg"
 import { SimpleWalkingRouteLeg } from "./SimpleWalkingRouteLeg"
 

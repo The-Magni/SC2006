@@ -13,6 +13,7 @@ import { Carpark } from "../entityclass/Carpark"
 import { ExternalApiHandler } from "../boundary/ExternalApiHandler"
 import { calCrow, getStopNumber, calDistancePointLine } from "../utils"
 import { CarparkData } from "../boundary/ExternalApiHandler"
+import { ConvenienceScoreFilterPreference } from "../entityclass/ConvenienceScoreFilterPreference"
 
 
 export function parseCoords(coordStr: string): { lat: number; lng: number } | null {
@@ -307,18 +308,39 @@ export class ItineraryController {
 		itinerary.weather = weatherData;
 	}
 
-	public rankItineraries(itineraries: BaseItinerary[]) {
-		const walkingItineraries = [],
-		drivingItineraries = [],
-		publicItineraries = [];
+	public rankItineraries(itineraries: BaseItinerary[], userPreference: ConvenienceScoreFilterPreference) {
+		type ItineraryScore<T extends BaseItinerary> = {
+			itinerary: T;
+			score: number;
+		};
+		const itineraryScore: ItineraryScore<BaseItinerary>[] = [];
 		for (const itinerary of itineraries) {
-			if (itinerary instanceof SimpleWalkingItinerary)
-				walkingItineraries.push(itinerary);
-			else if (itinerary instanceof DrivingItinerary)
-				drivingItineraries.push(itinerary);
-			else if (itinerary instanceof PublicItinerary)
-				publicItineraries.push(itinerary);
+			if (
+				!(itinerary instanceof SimpleWalkingItinerary) &&
+				!(itinerary instanceof DrivingItinerary) &&
+				!(itinerary instanceof PublicItinerary)
+			) 
+				throw new Error('Unknow itinery type');
+			itinerary.convenienceScore.computeScore(itineraries, userPreference);
+			const score = itinerary.convenienceScore.getScore();
+			itineraryScore.push({
+				itinerary: itinerary,
+				score: score
+			});
 		}
-		
+		itineraryScore.sort((a, b) => b.score - a.score); // sort descending based on convenience score
+		const bestItineraries = itineraryScore.slice(0, Math.min(3, itineraryScore.length));
+		const walkingItineraries: ItineraryScore<SimpleWalkingItinerary>[] = [];
+		const publicItineraries: ItineraryScore<PublicItinerary>[] = [];
+		const drivingItineraries: ItineraryScore<DrivingItinerary>[] = []
+		for (const i of itineraryScore) {
+			if (i.itinerary instanceof SimpleWalkingItinerary)
+				walkingItineraries.push(i as ItineraryScore<SimpleWalkingItinerary>);
+			else if (i.itinerary instanceof PublicItinerary)
+				publicItineraries.push(i as ItineraryScore<PublicItinerary>);
+			else if (i.itinerary instanceof DrivingItinerary)
+				drivingItineraries.push(i as ItineraryScore<DrivingItinerary>);
+		}
+		return [bestItineraries, walkingItineraries, publicItineraries, drivingItineraries];
 	}
 }

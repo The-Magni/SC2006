@@ -2,6 +2,7 @@ import { BaseItinerary } from "./BaseItinerary"
 import { RouteLeg } from "./RouteLeg"
 import { Carpark } from "./Carpark"
 import { decodePolyline } from "../controllers/leaflethelper-controller"
+import { ConvenienceScore, ConvenienceScoreFactory } from "./ConvenienceScore"
 
 export class DrivingItinerary extends BaseItinerary {
   nearestCarpark?: Carpark
@@ -9,12 +10,14 @@ export class DrivingItinerary extends BaseItinerary {
   polylineCoords: [number, number][]
   viaRoute?: string
   userMode = "drive"
+  convenienceScore: ConvenienceScore<DrivingItinerary>
 
   constructor(legs: RouteLeg[], fgs?: string, nearestCarpark?: Carpark, viaRoute?: string) {
     super(legs, "drive")
     this.nearestCarpark = nearestCarpark
     this.fullGeometryString = fgs
     this.viaRoute = viaRoute
+    this.convenienceScore = ConvenienceScoreFactory.create<DrivingItinerary>(this);
     console.log("i am the full gemotry string from constructor", fgs)
 
     if (fgs) {

@@ -79,13 +79,15 @@ export class DrivingScoring implements ScoringStrategy<DrivingItinerary> {
 }
 
 export class ConvenienceScoreFactory { //factory pattern
-    public static create(itinerary: BaseItinerary) {
+    public static create<T extends BaseItinerary>(itinerary: T) {
         if (itinerary instanceof SimpleWalkingItinerary) 
-            return new ConvenienceScore<SimpleWalkingItinerary>(itinerary, new WalkingScoring());
+            return new ConvenienceScore<SimpleWalkingItinerary>(itinerary, new WalkingScoring()) as unknown as ConvenienceScore<T>;
         else if (itinerary instanceof PublicItinerary)
-            return new ConvenienceScore<PublicItinerary>(itinerary, new PublicScoring());
+            return new ConvenienceScore<PublicItinerary>(itinerary, new PublicScoring()) as unknown as ConvenienceScore<T>;
         else if (itinerary instanceof DrivingItinerary)
-            return new ConvenienceScore<DrivingItinerary>(itinerary, new DrivingScoring());
+            return new ConvenienceScore<DrivingItinerary>(itinerary, new DrivingScoring()) as unknown as ConvenienceScore<T>;
+        else
+            throw new Error('Invalid itinerary type');
     }
 }
 
