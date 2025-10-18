@@ -1,6 +1,6 @@
 import { RouteLeg } from "../entityclass/RouteLeg";
 
-export interface CarparkData {
+interface CarparkData {
     CarParkID: string;
     Area: string;
     Development: string;

@@ -17,7 +17,7 @@ export async function getRoute(
   if (mode === "pt") {
 
     url =
-      `${process.env.NEXT_PUBLIC_BASE_URL}/api/onemap/route?start=${startLat},${startLng}` +
+      `/api/onemap/route?start=${startLat},${startLng}` +
       `&end=${endLat},${endLng}` +
       `&routeType=pt` +
       `&date=${date}` +

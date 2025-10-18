@@ -27,6 +27,7 @@ import { SimpleWalkingRouteLeg } from "../entityclass/SimpleWalkingRouteLeg"
 import { ExternalApiHandler } from "../boundary/ExternalApiHandler"
 import { calCrow } from "../utils"
 
+import { calCrow, calDistancePointLine, getStopNumber } from "../utils"
 
 export class ItineraryController {
 	private api: ExternalApiHandler;
@@ -42,12 +43,15 @@ export class ItineraryController {
 		const latitude = destination.lat;
 		const longtitude = destination.lon;
         const allCarParks = await this.api.fetchCarparkAvailability(latitude, longtitude);
+		const longitude = destination.lon;
+        const allCarParks = await this.api.fetchCarparkAvailability();
         let minDistance = Infinity;
         let nearestLocation: [number, number] = [Infinity, Infinity];
         allCarParks.forEach(carparkData => {
             const location = carparkData.Location;
             const [lat, long] = location.split(' ').map(parseFloat);
             const distance = calCrow(lat, long, latitude, longtitude);
+            const distance = calCrow(lat, long, latitude, longitude);
             if (distance < minDistance) {
                 minDistance = distance;
                 nearestLocation = [lat, long];
