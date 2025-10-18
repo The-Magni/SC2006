@@ -64,19 +64,18 @@ export class ItineraryController {
 
 
   static parseSimpleRoute(json: any, mode: "drive" | "walk" | "cycle"): BaseItinerary[] {
-    const summary = json.route_summary ?? {}
-    const fullGeometry = json.route_geometry ?? ""
+    const itineraries: BaseItinerary[] = []
 
-    const legs: RouteLeg[] = []
+    function buildDrivingItinerary(routeBlock: any, label?: string): DrivingItinerary {
+      const summary = routeBlock.route_summary ?? {}
+      const fullGeometry = routeBlock.route_geometry ?? ""
+      const routeInstructions = routeBlock.route_instructions ?? []
+      const legs: RouteLeg[] = []
 
-    if (mode === "drive") {
-      const routeInstructions = json.route_instructions ?? []
-      console.log(routeInstructions)
       for (const instr of routeInstructions) {
-        console.log(instr)
-        console.log(fullGeometry)
-        legs.push(new DrivingRouteLeg(instr, fullGeometry)    )
-        
+        legs.push(
+          new DrivingRouteLeg(instr, fullGeometry)
+        )
       }
 
       const iti = new DrivingItinerary(legs)
@@ -84,10 +83,22 @@ export class ItineraryController {
       iti.totalDistance = summary.total_distance ?? 0
       iti.totalTransfers = 0
       iti.totalFare = 0
-      return [iti]
+      iti.userMode = label ?? "drive"
+      return iti
+    }
+    //fastest route by time
+    if (mode === "drive" && json.route_instructions) {
+      itineraries.push(buildDrivingItinerary(json, "fastest"))
     }
 
-    else {
+    //fastest secondary route by distance
+    if (mode === "drive" && json.phyroute?.route_instructions) {
+      itineraries.push(buildDrivingItinerary(json.phyroute, "shortest"))
+    }
+
+    if (["walk", "cycle"].includes(mode)) {
+      const summary = json.route_summary ?? {}
+      const fullGeometry = json.route_geometry ?? ""
       const leg = new WalkingRouteLeg({
         mode,
         distance: summary.total_distance ?? 0,
@@ -101,8 +112,10 @@ export class ItineraryController {
       iti.totalDistance = summary.total_distance ?? 0
       iti.totalTransfers = 0
       iti.totalFare = 0
-      return [iti]
+      itineraries.push(iti)
     }
+
+    return itineraries
   }
 
 

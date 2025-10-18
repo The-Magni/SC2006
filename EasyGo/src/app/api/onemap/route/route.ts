@@ -38,13 +38,13 @@ export async function GET(req: Request) {
     params.set("start", start)
     params.set("end", end)
     params.set("routeType", routeType)
+    params.set("numItineraries", "5")
 
     if (routeType === "pt") {
       if (date) params.set("date", date)
       if (time) params.set("time", time)
       params.set("mode", mode ?? "TRANSIT")
       params.set("maxWalkDistance", "2000")
-      params.set("numItineraries", "3")
     }
 
     const url = `${base}?${params.toString()}`

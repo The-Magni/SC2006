@@ -13,28 +13,30 @@ export async function getRoute(
   let url = ""
 
   if (mode === "pt") {
-    // 🚌 Public transport route — requires mode=TRANSIT/BUS/RAIL
+
     url =
       `/api/onemap/route?start=${startLat},${startLng}` +
       `&end=${endLat},${endLng}` +
       `&routeType=pt` +
       `&date=${date}` +
       `&time=${curtime}` +
-      `&mode=TRANSIT` + // ✅ mandatory!
+      `&mode=TRANSIT` +
       `&maxWalkDistance=2000` +
       `&numItineraries=5`
   } else {
-    // 🚗 🚶‍♂️ 🚴 drive / walk / cycle routes
+
     url =
       `/api/onemap/route?start=${startLat},${startLng}` +
       `&end=${endLat},${endLng}` +
-      `&routeType=${mode}`
+      `&routeType=${mode}` +
+      `&numItineraries=5`
+
   }
 
   const res = await fetch(url)
   if (!res.ok) {
     const errText = await res.text()
-    console.error(`❌ OneMap API failed: ${res.status} →`, errText)
+    console.error(`OneMap API failed: ${res.status} →`, errText)
     throw new Error(`OneMap API failed (${res.status})`)
   }
 

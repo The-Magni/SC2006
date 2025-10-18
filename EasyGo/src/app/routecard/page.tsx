@@ -70,6 +70,7 @@ export default function Page() {
 
     try {
       const data = await getRoute([1.320394, 103.844478], [1.326868, 103.855789], "drive")
+      console.log(data)
       const itineraries = ItineraryController.parseResponse(data, "drive")
       console.log(itineraries)
       console.log("Parsed itineraries:", itineraries.length)
