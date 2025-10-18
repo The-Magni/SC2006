@@ -4,7 +4,6 @@ export class Carpark {
   lat: number
   lng: number
   availableLots?: number
-  totalLots?: number
 
   constructor(data: {
     id: string
@@ -19,7 +18,6 @@ export class Carpark {
     this.lat = data.lat
     this.lng = data.lng
     this.availableLots = data.availableLots
-    this.totalLots = data.totalLots
   }
 
   get location(): [number, number] {

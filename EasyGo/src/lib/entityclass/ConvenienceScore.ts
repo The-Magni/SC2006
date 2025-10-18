@@ -1,32 +1,93 @@
-import { Itinerary } from "./Itinerary";
+import { BaseItinerary } from "./BaseItinerary";
 import { ConvenienceScoreFilterPreference } from "./ConvenienceScoreFilterPreference";
+import { DrivingItinerary } from "./DrivingItinerary";
+import { PublicItinerary } from "./PublicItinerary";
+import { SimpleWalkingItinerary } from "./SimpleWalkingItinerary";
 
-export class ConvenienceScore {
-    private score: number;
-    private userPreference: ConvenienceScoreFilterPreference;
-    private itinerary: Itinerary;
+function normalizeValue<T extends BaseItinerary>(
+    itinerary: T,
+    itineraryList: T[],
+    selector: (itinerary: T) => number
+): number {
+    let minValue = selector(itinerary);
+    let maxValue = selector(itinerary);
+    itineraryList.forEach(i => {
+        const value = selector(i);
+        if (value < minValue)
+            minValue = value;
+        else if (value > maxValue)
+            maxValue = value;
+    });
+    if (minValue === maxValue) // prevent division by 0
+        return 1;
+    return (selector(itinerary) - minValue) / (maxValue - minValue);
+}
 
-    private normalizeValue(
-        itineraryList: Itinerary[],
-        selector: (itinerary: Itinerary) => number
+
+export interface ScoringStrategy<T extends BaseItinerary> {
+    calculate(
+        initScore: number,
+        itinerary: T, 
+        userPreference: ConvenienceScoreFilterPreference, 
+        itineraries: T[]): number;
+}
+
+export class WalkingScoring implements ScoringStrategy<SimpleWalkingItinerary> {
+    public calculate(
+        initScore: number,
+        itinerary: SimpleWalkingItinerary, 
+        userPreference: ConvenienceScoreFilterPreference, 
+        itineraries: SimpleWalkingItinerary[]
     ): number {
-        let minValue = selector(this.itinerary);
-        let maxValue = selector(this.itinerary);
-        itineraryList.forEach(i => {
-            const value = selector(i);
-            if (value < minValue)
-                minValue = value;
-            else if (value > maxValue)
-                maxValue = value;
-        });
-        if (minValue === maxValue) // prevent division by 0
-            return 1;
-        return (selector(this.itinerary) - minValue) / (maxValue - minValue);
+        return initScore / userPreference.getTotalWeightWalking() * 9 + 1; // ensure in the range 1-10       
     }
+}
 
-    public constructor(itinerary: Itinerary, userPreference: ConvenienceScoreFilterPreference) {
+export class PublicScoring implements ScoringStrategy<PublicItinerary> {
+    public calculate(
+        initScore: number,
+        itinerary: PublicItinerary, 
+        userPreference: ConvenienceScoreFilterPreference, 
+        itineraries: PublicItinerary[]
+    ): number {
+        const normalizedNoTransferScore = normalizeValue<PublicItinerary>(itinerary, itineraries, i => i.totalTransfers);
+        const normalizedFareScore = normalizeValue<PublicItinerary>(itinerary, itineraries, i => i.totalFare || 0);
+        const normalizedBusWaitTimeScore = normalizeValue<PublicItinerary>(itinerary, itineraries, i => i.busWaitTime);
+        const normalizedPlatformDensityScore = normalizeValue<PublicItinerary>(itinerary, itineraries, i => i.platformDensity);
+        
+        const score = initScore + 
+        userPreference.noTransferWeight * (1 - normalizedNoTransferScore) +
+        userPreference.fareWeight * (1 - normalizedFareScore) +
+        userPreference.busWaitTimeWeight * (1 - normalizedBusWaitTimeScore) +
+        userPreference.platformDensityWeight * (1 - normalizedPlatformDensityScore);
+        return score / userPreference.getTotalWeightPublicTransport() * 9 + 1; // ensure in the range 1-10
+    }
+}
+
+export class DrivingScoring implements ScoringStrategy<DrivingItinerary> {
+    public calculate(
+        initScore: number,
+        itinerary: DrivingItinerary, 
+        userPreference: ConvenienceScoreFilterPreference, 
+        itineraries: DrivingItinerary[]
+    ): number {
+        const normalizedCarparkAvailabilityScore = normalizeValue<DrivingItinerary>(itinerary, itineraries, i => i.nearestCarpark?.availableLots || 0);
+        const score = initScore +
+        userPreference.carparkAvailabilityWeight * normalizedCarparkAvailabilityScore;
+        return score / userPreference.getTotalWeightDriving() * 9 + 1;
+    }
+}
+
+export class ConvenienceScore<T extends BaseItinerary> {
+    private score: number;
+    private itinerary: T;
+    private strategy: ScoringStrategy<T>; // For demonstrate strategy pattern
+    private userPreference: ConvenienceScoreFilterPreference;
+
+    public constructor(itinerary: T, userPreference: ConvenienceScoreFilterPreference, strategy: ScoringStrategy<T>) {
         this.itinerary = itinerary;
         this.userPreference = userPreference;
+        this.strategy = strategy;
         this.score = 0;
     }
 
@@ -34,15 +95,13 @@ export class ConvenienceScore {
         return this.score;
     }
 
-    public computeScore(itineraryList: Itinerary[]): void {
-        const normalizedDurationScore = this.normalizeValue(itineraryList, i => i.totalDuration);
-        const normalizedFareScore = this.normalizeValue(itineraryList, i => i.totalFare);
-        const normalizedNoTransferScore = this.normalizeValue(itineraryList, i => i.totalTransfers);
-        const normalizedWalkingDistanceScore = this.normalizeValue(itineraryList, i => i.getWalkingDistance());
-
-        const totalScore = this.userPreference.durationWeight * (1 - normalizedDurationScore)
-        + this.userPreference.fareWeight * (1 - normalizedFareScore)
-        + this.userPreference.noTransferWeight * (1 - normalizedNoTransferScore)
+    public computeScore(itineraries: BaseItinerary[]): void {
+        const normalizedDurationScore = normalizeValue<BaseItinerary>(this.itinerary, itineraries, i => i.totalDuration);
+        const normalizedWalkingDistanceScore = normalizeValue<BaseItinerary>(this.itinerary, itineraries, i => i.getWalkingDistance());
+        const T_Itineraries = itineraries.filter(i => i instanceof this.itinerary.constructor) as T[];
+        
+        this.score = this.userPreference.durationWeight * (1 - normalizedDurationScore)
         + this.userPreference.walkingDistanceWeight * (1 - normalizedWalkingDistanceScore);
+        this.score = this.strategy.calculate(this.score, this.itinerary, this.userPreference, T_Itineraries);
     }
-}
+} 
