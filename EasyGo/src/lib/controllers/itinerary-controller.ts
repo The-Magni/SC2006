@@ -43,6 +43,7 @@ export class ItineraryController {
       const legs: RouteLeg[] = []
 
       for (const leg of legsRaw) {
+        //console.log(leg)
         const mode = leg.mode?.toUpperCase() ?? ""
         if (mode === "BUS") legs.push(new BusRouteLeg(leg))
         else if (["RAIL", "SUBWAY", "TRAIN"].includes(mode)) legs.push(new TrainRouteLeg(leg))
