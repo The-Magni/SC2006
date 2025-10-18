@@ -3,6 +3,7 @@ import { BusRouteLeg } from "./BusRouteLeg"
 import { TrainRouteLeg } from "./TrainRouteLeg"
 import { WalkingRouteLeg } from "./WalkingRouteLeg"
 import { RouteLeg } from "./RouteLeg"
+import { ConvenienceScore, PublicScoring } from "./ConvenienceScore"
 
 export class PublicItinerary extends BaseItinerary {
   userMode?: string

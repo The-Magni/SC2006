@@ -78,15 +78,24 @@ export class DrivingScoring implements ScoringStrategy<DrivingItinerary> {
     }
 }
 
+export class ConvenienceScoreFactory { //factory pattern
+    public static create(itinerary: BaseItinerary) {
+        if (itinerary instanceof SimpleWalkingItinerary) 
+            return new ConvenienceScore<SimpleWalkingItinerary>(itinerary, new WalkingScoring());
+        else if (itinerary instanceof PublicItinerary)
+            return new ConvenienceScore<PublicItinerary>(itinerary, new PublicScoring());
+        else if (itinerary instanceof DrivingItinerary)
+            return new ConvenienceScore<DrivingItinerary>(itinerary, new DrivingScoring());
+    }
+}
+
 export class ConvenienceScore<T extends BaseItinerary> {
     private score: number;
     private itinerary: T;
     private strategy: ScoringStrategy<T>; // For demonstrate strategy pattern
-    private userPreference: ConvenienceScoreFilterPreference;
 
-    public constructor(itinerary: T, userPreference: ConvenienceScoreFilterPreference, strategy: ScoringStrategy<T>) {
+    public constructor(itinerary: T, strategy: ScoringStrategy<T>) {
         this.itinerary = itinerary;
-        this.userPreference = userPreference;
         this.strategy = strategy;
         this.score = 0;
     }
@@ -95,13 +104,13 @@ export class ConvenienceScore<T extends BaseItinerary> {
         return this.score;
     }
 
-    public computeScore(itineraries: BaseItinerary[]): void {
+    public computeScore(itineraries: BaseItinerary[], userPreference: ConvenienceScoreFilterPreference): void {
         const normalizedDurationScore = normalizeValue<BaseItinerary>(this.itinerary, itineraries, i => i.totalDuration);
         const normalizedWalkingDistanceScore = normalizeValue<BaseItinerary>(this.itinerary, itineraries, i => i.getWalkingDistance());
         const T_Itineraries = itineraries.filter(i => i instanceof this.itinerary.constructor) as T[];
         
-        this.score = this.userPreference.durationWeight * (1 - normalizedDurationScore)
-        + this.userPreference.walkingDistanceWeight * (1 - normalizedWalkingDistanceScore);
-        this.score = this.strategy.calculate(this.score, this.itinerary, this.userPreference, T_Itineraries);
+        this.score = userPreference.durationWeight * (1 - normalizedDurationScore)
+        + userPreference.walkingDistanceWeight * (1 - normalizedWalkingDistanceScore);
+        this.score = this.strategy.calculate(this.score, this.itinerary, userPreference, T_Itineraries);
     }
 } 

@@ -1,6 +1,6 @@
 import { RouteLeg } from "./RouteLeg"
 
-export class SimleWalkingRouteLeg extends RouteLeg {
+export class SimpleWalkingRouteLeg extends RouteLeg {
   from?: [number, number]
   to?: [number, number]
 

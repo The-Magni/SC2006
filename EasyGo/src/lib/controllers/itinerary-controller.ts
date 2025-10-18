@@ -307,5 +307,18 @@ export class ItineraryController {
 		itinerary.weather = weatherData;
 	}
 
-
+	public rankItineraries(itineraries: BaseItinerary[]) {
+		const walkingItineraries = [],
+		drivingItineraries = [],
+		publicItineraries = [];
+		for (const itinerary of itineraries) {
+			if (itinerary instanceof SimpleWalkingItinerary)
+				walkingItineraries.push(itinerary);
+			else if (itinerary instanceof DrivingItinerary)
+				drivingItineraries.push(itinerary);
+			else if (itinerary instanceof PublicItinerary)
+				publicItineraries.push(itinerary);
+		}
+		
+	}
 }
