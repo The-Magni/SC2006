@@ -5,8 +5,10 @@ import { WalkingRouteLeg } from "./WalkingRouteLeg"
 import { RouteLeg } from "./RouteLeg"
 
 export class PublicItinerary extends BaseItinerary {
+  userMode?: string 
   constructor(legs: RouteLeg[]) {
     super(legs, "pt")
+    this.userMode = "pt"
   }
 
   get summary(): string {

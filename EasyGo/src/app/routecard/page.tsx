@@ -12,41 +12,28 @@ import { TrainRouteLeg } from "@/lib/entityclass/TrainRouteLeg"
 import { useEffect, useRef, useState } from "react"
 import type { MapDisplayHandle } from "@/components/map-display"
 import dynamic from "next/dynamic"
-import drawPolylines from "@/lib/onemap/onemapHandler"
 import "leaflet/dist/leaflet.css"
 const Leaflet = dynamic(() => import("leaflet"), { ssr: false })
 
 const MapDisplay = dynamic(() => import("@/components/map-display"), {
   ssr: false,
 })
-
+import {
+  initLeafletMap,
+  clearMapOverlays,
+  drawItinerariesOnMap,
+} from "@/lib/controllers/leaflethelper-controller"
 
 
 export default function Page() {
   //temp leaflet map display
   const mapRef = useRef<L.Map | null>(null)
-  const [mapReady, setMapReady] = useState(false)
 
-useEffect(() => {
-  async function initMap() {
-    const L = await import("leaflet")
-    if (!mapRef.current) {
-      const map = L.map("mapdiv", {
-        center: [1.3521, 103.8198],
-        zoom: 13,
-      })
-      L.tileLayer("https://www.onemap.gov.sg/maps/tiles/Default/{z}/{x}/{y}.png", {
-        detectRetina: true,
-        maxZoom: 19,
-        minZoom: 11,
-        attribution:
-            '<img src="https://www.onemap.gov.sg/web-assets/images/logo/om_logo.png" style="height:20px;width:20px;"/>&nbsp;<a href="https://www.onemap.gov.sg/" target="_blank" rel="noopener noreferrer">OneMap</a>&nbsp;&copy;&nbsp;contributors&nbsp;&#124;&nbsp;<a href="https://www.sla.gov.sg/" target="_blank" rel="noopener noreferrer">Singapore Land Authority</a>',
-      }).addTo(map)
-      mapRef.current = map
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      initLeafletMap("mapdiv").then((map) => (mapRef.current = map))
     }
-  }
-  if (typeof window !== "undefined") initMap()
-}, [])
+  }, [])
 
 
 
@@ -62,7 +49,14 @@ useEffect(() => {
     try {
       const data = await getRoute([1.397055, 103.747498], [1.2654, 103.8203], "pt")
       const itineraries = ItineraryController.parseResponse(data, "pt")
+      
+      //map drawing
+      const leaflet = await import("leaflet")
+      if (!mapRef.current) return
+      clearMapOverlays(mapRef.current)
+      drawItinerariesOnMap(mapRef.current, itineraries, leaflet)
 
+      //debug log
       console.log("Parsed itineraries:", itineraries.length)
       itineraries.forEach((iti, i) => {
         console.group(`Itinerary ${i + 1}`)
@@ -112,9 +106,16 @@ useEffect(() => {
       const data = await getRoute([1.397055, 103.747498], [1.2654, 103.8203], "drive")
       console.log(data)
       const itineraries = ItineraryController.parseResponse(data, "drive")
+      //map drawing
+      const leaflet = await import("leaflet")
+      if (!mapRef.current) return
+      clearMapOverlays(mapRef.current)
+      drawItinerariesOnMap(mapRef.current, itineraries, leaflet)
+
+
+
       console.log(itineraries)
       console.log("Parsed itineraries:", itineraries.length)
-
       itineraries.forEach((iti, i) => {
         if (!(iti instanceof DrivingItinerary)) return
         console.group(`Driving Itinerary ${i + 1}`)
@@ -143,7 +144,55 @@ useEffect(() => {
       console.error("Driving test failed:", err)
     }
   }
+  // ------------------------
+  // WalkingRoute Test
+  // ------------------------
+async function testWalkingItinerary() {
+  console.clear()
+  console.log("Testing Walking Itinerary...")
 
+  try {
+    const data = await getRoute([1.397055, 103.747498], [1.2654, 103.8203], "walk")
+    const itineraries = ItineraryController.parseResponse(data, "walk")
+
+    console.log("Parsed itineraries:", itineraries.length)
+    console.log(data)
+
+    //Inspect itinerary details
+    itineraries.forEach((iti, i) => {
+      if (!(iti instanceof SimpleWalkingItinerary)) return
+
+      console.group(`Walking Itinerary ${i + 1}`)
+      console.log("Class:", iti.constructor.name)
+      console.log("Duration (s):", iti.totalDuration)
+      console.log("Distance (m):", iti.totalDistance)
+      console.log("Mode:", iti.userMode)
+      console.log("Polyline Points:", iti.polylineCoords?.length)
+      console.groupEnd()
+
+      iti.legs.forEach((leg, j) => {
+        console.group(`  🚶 Leg ${j + 1}`)
+        console.log("Mode:", leg.mode)
+        console.log("Distance:", leg.distance)
+        console.log("Duration:", leg.duration)
+        console.log("Geometry points:", leg.geometry?.length)
+        console.log("Description:", leg.getDescription?.() ?? leg.description)
+        console.groupEnd()
+      })
+    })
+
+    const leaflet = await import("leaflet")
+    if (mapRef.current) {
+      clearMapOverlays(mapRef.current)
+      drawItinerariesOnMap(mapRef.current, itineraries, leaflet)
+    }
+  } catch (err) {
+    console.error("Walking itinerary test failed:", err)
+  }
+}
+
+
+  
   // ------------------------
   // Page renderting test
   // ------------------------
@@ -164,8 +213,8 @@ useEffect(() => {
   return (
     <div className="p-4 space-y-4 text-white">
       <h2 className="text-lg font-semibold">Route Test Page</h2>
-      <h3 className="text-lg">Test Locations: </h3>
-
+      <h3 className="text-lg">Test Locations: Yew Tee MRT Station & Harbourfront MRT Station</h3>
+      <div>Check console log for output</div>
       <Button onClick={testPublicTransport} variant="secondary" size="sm">
         Test Public Transport
       </Button>
@@ -173,7 +222,9 @@ useEffect(() => {
       <Button onClick={testDrivingItinerary} variant="secondary" size="sm">
         Test Driving Route
       </Button>
-
+      <Button onClick={testWalkingItinerary} variant="secondary" size="sm">
+        Test Walking Route (returns 1 only)
+      </Button>
       <Button onClick={handleDebugRoute} variant="secondary" size="sm">
         Render HTML Summary
       </Button>

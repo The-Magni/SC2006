@@ -1,22 +1,21 @@
 import { RouteLeg } from "./RouteLeg"
-import { decodePolyline } from "../controllers/leaflethelper-controller"
 
-export class SimpleWalkingRouteLeg extends RouteLeg {
-  instruction: string
-  distanceText: string
-  direction: string
-  geometryString: string
+export class SimleWalkingRouteLeg extends RouteLeg {
+  from?: [number, number]
+  to?: [number, number]
 
-  constructor(data: any, fullGeometry?: string) {
-    super({ mode: "WALK" })
-
-    this.instruction = data[0] ?? ""
-    this.distance = data[2] ?? 0
-    this.distanceText = data[5] ?? `${this.distance}m`
-    this.direction = data[6] ?? ""
-    this.geometryString = fullGeometry ?? ""
-
-    this.geometry = this.geometryString ? decodePolyline(this.geometryString) : []
-    this.description = `🚶 ${this.instruction} (${this.distanceText})`
+  constructor(data: {
+    mode: string
+    distance?: number
+    duration?: number
+    from?: [number, number]
+    to?: [number, number]
+  }) {
+    super({ mode: data.mode })
+    this.distance = data.distance ?? 0
+    this.duration = data.duration ?? 0
+    this.from = data.from
+    this.to = data.to
+    this.description = `${this.mode} for ${(this.distance / 1000).toFixed(2)} km`
   }
 }

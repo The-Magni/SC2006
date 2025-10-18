@@ -9,7 +9,7 @@ import { BaseItinerary } from "../entityclass/BaseItinerary"
 import { PublicItinerary } from "../entityclass/PublicItinerary"
 import { DrivingItinerary } from "../entityclass/DrivingItinerary"
 import { SimpleWalkingItinerary } from "../entityclass/SimpleWalkingItinerary"
-
+import { Carpark } from "../entityclass/Carpark"
 
 export function parseCoords(coordStr: string): { lat: number; lng: number } | null {
   if (!coordStr) return null
@@ -64,7 +64,7 @@ export class ItineraryController {
   }
 
 
-  static parseSimpleRoute(json: any, mode: "drive" | "walk" | "cycle"): BaseItinerary[] {
+    static parseSimpleRoute(json: any, mode: "drive" | "walk" | "cycle"): BaseItinerary[] {
     const itineraries: BaseItinerary[] = []
 
     function buildDrivingItinerary(routeBlock: any, label?: string): DrivingItinerary {
@@ -74,34 +74,56 @@ export class ItineraryController {
       const legs: RouteLeg[] = []
 
       for (const instr of routeInstructions) {
-        legs.push(new DrivingRouteLeg(instr, fullGeometry))
+        legs.push(new DrivingRouteLeg(instr))
       }
+      console.log("the full geometry in build driving itinerary", fullGeometry)
+      console.log("this is a route block",routeBlock.viaRoute)
 
-      const iti = new DrivingItinerary(legs)
+      //temp empty carpark 
+      const emptyCarpark = new Carpark({
+      id: "",
+      name: "Unknown",
+      lat: 0,
+      lng: 0,
+      availableLots: 0,
+    })
+
+
+      const iti = new DrivingItinerary(legs, fullGeometry, emptyCarpark, routeBlock.viaRoute)
       iti.totalDuration = summary.total_time ?? 0
       iti.totalDistance = summary.total_distance ?? 0
       iti.totalTransfers = 0
       iti.totalFare = 0
-      iti.userMode = label ?? "drive"
+
       return iti
     }
 
-    if (mode === "drive" && json.route_instructions) {
-      itineraries.push(buildDrivingItinerary(json, "fastest"))
+    //
+    //DRIVING MODES
+    //
+    if (mode === "drive") {
+      // Primary (fastest) route
+      if (json.route_instructions) {
+        itineraries.push(buildDrivingItinerary(json, "fastest"))
+      }
+
+      // Secondary (shortest) route
+      if (json.phyroute?.route_instructions) {
+        itineraries.push(buildDrivingItinerary(json.phyroute, "shortest"))
+      }
+
+      // Alternative suggestions (array)
+      if (Array.isArray(json.alternativeroute)) {
+        json.alternativeroute.forEach((alt: any, idx: number) => {
+          if (alt.route_instructions) {
+            itineraries.push(buildDrivingItinerary(alt, `alternative_${idx + 1}`))
+          }
+        })
+      }
     }
 
-    if (mode === "drive" && json.phyroute?.route_instructions) {
-      itineraries.push(buildDrivingItinerary(json.phyroute, "shortest"))
-    }
-
-    if (mode === "drive" && Array.isArray(json.alternativeroute)) {
-      json.alternativeroute.forEach((alt: any, idx: number) => {
-        if (alt.route_instructions) {
-          itineraries.push(buildDrivingItinerary(alt, `alternative_${idx + 1}`))
-        }
-      })
-    }
-
+    //
+    // WALK MODES
     if (["walk", "cycle"].includes(mode)) {
       const summary = json.route_summary ?? {}
       const fullGeometry = json.route_geometry ?? ""
@@ -113,7 +135,7 @@ export class ItineraryController {
         from: parseCoords(json.start ?? ""),
         to: parseCoords(json.end ?? ""),
       })
-      const iti = new SimpleWalkingItinerary([leg])
+      const iti = new SimpleWalkingItinerary([leg], fullGeometry, mode)
       iti.totalDuration = summary.total_time ?? 0
       iti.totalDistance = summary.total_distance ?? 0
       iti.totalTransfers = 0
