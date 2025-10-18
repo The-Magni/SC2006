@@ -9,9 +9,49 @@ import { DrivingItinerary } from "@/lib/entityclass/DrivingItinerary"
 import { SimpleWalkingItinerary } from "@/lib/entityclass/SimpleWalkingItinerary"
 import { TrainRouteLeg } from "@/lib/entityclass/TrainRouteLeg"
 
-import { useState } from "react"
+import { useEffect, useRef, useState } from "react"
+import type { MapDisplayHandle } from "@/components/map-display"
+import dynamic from "next/dynamic"
+import drawPolylines from "@/lib/onemap/onemapHandler"
+import "leaflet/dist/leaflet.css"
+const Leaflet = dynamic(() => import("leaflet"), { ssr: false })
+
+const MapDisplay = dynamic(() => import("@/components/map-display"), {
+  ssr: false,
+})
+
+
 
 export default function Page() {
+  //temp leaflet map display
+  const mapRef = useRef<L.Map | null>(null)
+  const [mapReady, setMapReady] = useState(false)
+
+useEffect(() => {
+  async function initMap() {
+    const L = await import("leaflet")
+    if (!mapRef.current) {
+      const map = L.map("mapdiv", {
+        center: [1.3521, 103.8198],
+        zoom: 13,
+      })
+      L.tileLayer("https://www.onemap.gov.sg/maps/tiles/Default/{z}/{x}/{y}.png", {
+        detectRetina: true,
+        maxZoom: 19,
+        minZoom: 11,
+        attribution:
+            '<img src="https://www.onemap.gov.sg/web-assets/images/logo/om_logo.png" style="height:20px;width:20px;"/>&nbsp;<a href="https://www.onemap.gov.sg/" target="_blank" rel="noopener noreferrer">OneMap</a>&nbsp;&copy;&nbsp;contributors&nbsp;&#124;&nbsp;<a href="https://www.sla.gov.sg/" target="_blank" rel="noopener noreferrer">Singapore Land Authority</a>',
+      }).addTo(map)
+      mapRef.current = map
+    }
+  }
+  if (typeof window !== "undefined") initMap()
+}, [])
+
+
+
+
+  
   // ----------------------------------
   // TEST 1: Public Transport
   // ----------------------------------
@@ -69,7 +109,7 @@ export default function Page() {
     console.log("Testing Driving Itinerary...")
 
     try {
-      const data = await getRoute([1.320394, 103.844478], [1.326868, 103.855789], "drive")
+      const data = await getRoute([1.397055, 103.747498], [1.2654, 103.8203], "drive")
       console.log(data)
       const itineraries = ItineraryController.parseResponse(data, "drive")
       console.log(itineraries)
@@ -124,6 +164,7 @@ export default function Page() {
   return (
     <div className="p-4 space-y-4 text-white">
       <h2 className="text-lg font-semibold">Route Test Page</h2>
+      <h3 className="text-lg">Test Locations: </h3>
 
       <Button onClick={testPublicTransport} variant="secondary" size="sm">
         Test Public Transport
@@ -141,6 +182,13 @@ export default function Page() {
         className="summarytarget text-white whitespace-pre-wrap mt-4"
         dangerouslySetInnerHTML={{ __html: summary }}
       />
+
+              
+    <div
+      id="mapdiv"
+      className="w-full h-[500px] mt-4 border border-gray-700 rounded-lg"
+    ></div>
     </div>
+    
   )
 }

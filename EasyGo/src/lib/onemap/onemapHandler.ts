@@ -1,3 +1,5 @@
+import { MapDisplayHandle } from "@/components/map-display"
+
 export async function getRoute(
   start: [number, number],
   end: [number, number],
@@ -41,4 +43,33 @@ export async function getRoute(
   }
 
   return await res.json()
+}
+
+export function drawPolylines(itineraries: any[], mapRef: React.RefObject<MapDisplayHandle>) {
+  if (!mapRef.current) return
+  const map = mapRef.current
+
+  // clear previous layers
+  map.eachLayer((layer) => {
+    if ((layer as any).options && !(layer as any).options.attribution) {
+      map.removeLayer(layer)
+    }
+  })
+
+  itineraries.forEach((iti, index) => {
+    const color = index === 0 ? "red" : "blue"
+    const lines = iti.getAllPolylines()
+    lines.forEach((poly: [number, number][]) => {
+      L.polyline(poly, { color, weight: 4, opacity: 0.8 }).addTo(map)
+    })
+  })
+
+  // auto-zoom to route
+  const allPoints = itineraries.flatMap((iti) =>
+    iti.getAllPolylines().flat()
+  )
+  if (allPoints.length > 0) {
+    const bounds = L.latLngBounds(allPoints as any)
+    map.fitBounds(bounds, { padding: [50, 50] })
+  }
 }

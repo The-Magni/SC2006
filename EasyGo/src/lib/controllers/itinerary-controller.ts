@@ -74,9 +74,7 @@ export class ItineraryController {
       const legs: RouteLeg[] = []
 
       for (const instr of routeInstructions) {
-        legs.push(
-          new DrivingRouteLeg(instr, fullGeometry)
-        )
+        legs.push(new DrivingRouteLeg(instr, fullGeometry))
       }
 
       const iti = new DrivingItinerary(legs)
@@ -87,14 +85,21 @@ export class ItineraryController {
       iti.userMode = label ?? "drive"
       return iti
     }
-    //fastest route by time
+
     if (mode === "drive" && json.route_instructions) {
       itineraries.push(buildDrivingItinerary(json, "fastest"))
     }
 
-    //fastest secondary route by distance
     if (mode === "drive" && json.phyroute?.route_instructions) {
       itineraries.push(buildDrivingItinerary(json.phyroute, "shortest"))
+    }
+
+    if (mode === "drive" && Array.isArray(json.alternativeroute)) {
+      json.alternativeroute.forEach((alt: any, idx: number) => {
+        if (alt.route_instructions) {
+          itineraries.push(buildDrivingItinerary(alt, `alternative_${idx + 1}`))
+        }
+      })
     }
 
     if (["walk", "cycle"].includes(mode)) {
