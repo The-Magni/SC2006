@@ -2,7 +2,7 @@ import { RouteLeg } from "./RouteLeg"
 
 export class BusRouteLeg extends RouteLeg {
   routeName: string
-  busStopCode?: string
+  busStopCode: string
 
   constructor(data: any) {
     super(data)

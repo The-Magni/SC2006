@@ -194,7 +194,7 @@ export class ItineraryController {
 	}
 
 	private async getRoutePlatformDensity(trainRoute: TrainRouteLeg): Promise<number> {
-		const trainLine = trainRoute.routeName.toUpperCase();
+		const trainLine = trainRoute.routeName.toUpperCase() + 'L';
 		try {
 			const stationDataList = await this.api.fetchPlatformDensity(trainLine);
 			const startStop = trainRoute.fromStation?.code.toUpperCase();
@@ -207,7 +207,7 @@ export class ItineraryController {
 				const number = getStopNumber(station.Station);
 				const prefix = station.Station.match(/^[A-Z]+/)?.[0] || '';
 				return (prefix === trainLine.replace(/L$/, '') 
-				&& startNumber <= number && number < endNumber);
+				&& (startNumber <= number && number < endNumber) || (startNumber >= number && number > endNumber));
 			});
 			
 			let totalDensity = 0;
@@ -306,6 +306,30 @@ export class ItineraryController {
 		const weatherData = forecast.find(f => f.area === closestStation)?.forecast;
 		if (!weatherData) throw new Error('No forecast for this weather station');
 		itinerary.weather = weatherData;
+	}
+
+	public async getBusWaitTime(itinerary: PublicItinerary) {
+		let totalWaitTime = 0; // in minutes
+		for (const route of itinerary.legs) {
+			if (!(route instanceof BusRouteLeg))
+				continue;
+			const busData = await this.api.fetchBusArrivalTime(route.busStopCode, route.routeName);
+			let waitTime = 0, count = 0;
+			if (busData.length <= 1)
+				continue; // bus may not in operations
+			for (let i = 0; i < busData.length-1; i++) {
+				const date1 = new Date(busData[i].EstimatedArrival);
+				const date2 = new Date(busData[i+1].EstimatedArrival);
+				waitTime += (date2.getTime() - date1.getTime()) / (1000 * 60);
+				count++;
+			}
+			if (count === 0) {
+				console.log('No bus');
+				return;
+			}
+			totalWaitTime += waitTime / count;
+		}
+		itinerary.busWaitTime = totalWaitTime;
 	}
 
 	public rankItineraries(itineraries: BaseItinerary[], userPreference: ConvenienceScoreFilterPreference) {
