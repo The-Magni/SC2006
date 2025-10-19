@@ -2,6 +2,9 @@
 
 /.idea/
 
+#env
+.env.local
+
 # dependencies
 /node_modules
 /.pnp
@@ -34,6 +37,10 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+
+./lib/onemap/token.json
+lib/onemap/token.json
+src/lib/onemap/token.json
 
 # vercel
 .vercel
