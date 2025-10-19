@@ -9,6 +9,10 @@ import { SimpleWalkingItinerary } from "@/lib/entityclass/SimpleWalkingItinerary
 import { getRoute } from "@/lib/onemap/onemapHandler";
 import { NextRequest, NextResponse } from "next/server";
 
+
+
+
+
 interface RequestBody {
     start: [number, number];
     end: [number, number];
@@ -22,8 +26,67 @@ interface RequestBody {
         fareWeight: number;
     }
 }
+function serializeForMap(itinerary: BaseItinerary) {
+  const base = {
+    userMode: itinerary.userMode,
+    totalDuration: itinerary.totalDuration,
+    totalDistance: itinerary.totalDistance,
+    totalFare: itinerary.totalFare ?? 0,
+    summary: itinerary.summary,
+  };
+
+  if (itinerary.userMode === "drive" || itinerary.userMode === "walk") {
+    return {
+      ...base,
+      polylineCoords: (itinerary as any).polylineCoords ?? [],
+      viaRoute: (itinerary as any).viaRoute ?? null,
+    };
+  }
+
+  if (itinerary.userMode === "pt") {
+    return {
+      ...base,
+      legs: itinerary.legs.map((l) => ({
+        mode: l.mode,
+        duration: l.duration,
+        distance: l.distance,
+        description: l.description,
+        geometry: l.geometry?.map((p) => ({ lat: p.lat, lng: p.lng })) ?? [],
+      })),
+    };
+  }
+
+  return base;
+}
+
+function serializeAll(itineraries: BaseItinerary[]) {
+  return itineraries.map(serializeForMap);
+}
 
 export function serialize(data: ItineraryScore<BaseItinerary>[]) {
+    return data.map(i => ({
+        score: i.score,
+        itinerary: {
+            totalDuration: i.itinerary.totalDuration,
+            totalDistance: i.itinerary.totalDistance,
+            totalFare: i.itinerary.totalFare,
+            summary: i.itinerary.summary
+        }  
+    }));
+}
+
+export function serializeDrvingItinerary(data: ItineraryScore<BaseItinerary>[]) {
+    return data.map(i => ({
+        score: i.score,
+        itinerary: {
+            totalDuration: i.itinerary.totalDuration,
+            totalDistance: i.itinerary.totalDistance,
+            totalFare: i.itinerary.totalFare,
+            summary: i.itinerary.summary
+        }  
+    }));
+}
+export function serializePTItinerary(data: ItineraryScore<BaseItinerary>[]) {
     return data.map(i => ({
         score: i.score,
         itinerary: {
@@ -92,9 +155,15 @@ export async function POST(request: NextRequest) {
     );
     const [best, walking, publicIti, driving] = controller.rankItineraries(allItineraries, userPreference);
     return NextResponse.json({
-        best: serialize(best),
-        walking: serialize(walking),
-        publicIti: serialize(publicIti),
-        driving: serialize(driving)
+        //best: serializeAll(best.map((b) => b.itinerary)), 
+        best: best.map(b => ({
+            score: b.score,
+            itinerary: serializeForMap(b.itinerary)
+        })),
+        driving: serializeAll(drivingItineraries),
+        public: serializeAll(publicItineraries),
+        walking: serializeAll(walkingItineraries),
     });
 }
+
+
