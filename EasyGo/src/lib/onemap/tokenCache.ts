@@ -23,13 +23,16 @@ export function loadToken() {
   }
 }
 
-export function saveToken(tokenData: any) {
+export function saveToken(enriched: any) {
   try {
-    const enriched = {
-      ...tokenData,
-      created_at: Date.now(),
+    const dir = path.dirname(TOKEN_PATH)
+
+    // Create directory if missing
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true })
     }
 
+    //Write token file
     fs.writeFileSync(TOKEN_PATH, JSON.stringify(enriched, null, 2), "utf8")
     console.log("Token saved to:", TOKEN_PATH)
   } catch (err) {
