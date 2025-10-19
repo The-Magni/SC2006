@@ -3,7 +3,7 @@ import dynamic from "next/dynamic";
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
 import { AppSidebarSearch } from "@/components/app-sidebar-search"
 import type { MapDisplayHandle } from "@/components/map-display";
-import type { OneMapSearchResult } from "@/lib/onemapAutoFill";
+import type { OneMapSearchResult } from "@/lib/onemap/onemapAutoFill";
 
 const MapDisplay = dynamic(() => import("@/components/map-display"), {
   ssr: false,
