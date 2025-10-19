@@ -5,6 +5,7 @@ import L from "leaflet"
 import "leaflet/dist/leaflet.css"
 
 export interface MapDisplayHandle {
+  map: L.Map                
   panTo: (lat: number, lng: number, popupText?: string) => void
 }
 
@@ -14,7 +15,7 @@ const MapDisplay = forwardRef<MapDisplayHandle>((_, ref) => {
   const markerRef = useRef<L.Marker | null>(null)
 
   useEffect(() => {
-    if (mapContainerRef.current) {
+    if (mapContainerRef.current && !mapRef.current) {
       const sw = L.latLng(1.144, 103.535)
       const ne = L.latLng(1.494, 104.502)
       const bounds = L.latLngBounds(sw, ne)
@@ -26,7 +27,6 @@ const MapDisplay = forwardRef<MapDisplayHandle>((_, ref) => {
       })
 
       mapRef.current = map
-
       map.setMaxBounds(bounds)
 
       const basemap = L.tileLayer(
@@ -40,7 +40,7 @@ const MapDisplay = forwardRef<MapDisplayHandle>((_, ref) => {
 
       basemap.addTo(map)
 
-      // Add click marker
+      // Click marker behavior
       map.on("click", (e: L.LeafletMouseEvent) => {
         if (markerRef.current) markerRef.current.remove()
 
@@ -54,7 +54,7 @@ const MapDisplay = forwardRef<MapDisplayHandle>((_, ref) => {
         markerRef.current = marker
       })
 
-      // Handle container resize
+      // Handle resize
       const resizeObserver = new ResizeObserver(() => map.invalidateSize())
       resizeObserver.observe(mapContainerRef.current)
 
@@ -69,6 +69,7 @@ const MapDisplay = forwardRef<MapDisplayHandle>((_, ref) => {
   }, [])
 
   useImperativeHandle(ref, () => ({
+    map: mapRef.current as L.Map,
     panTo(lat: number, lng: number, popupText?: string) {
       if (!mapRef.current) return
 

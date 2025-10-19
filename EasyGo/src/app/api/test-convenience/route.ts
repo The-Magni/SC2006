@@ -26,7 +26,7 @@ interface RequestBody {
         fareWeight: number;
     }
 }
-function serializeForMap(itinerary: BaseItinerary) {
+export function serializeForMap(itinerary: BaseItinerary) {
   const base = {
     userMode: itinerary.userMode,
     totalDuration: itinerary.totalDuration,
@@ -36,10 +36,21 @@ function serializeForMap(itinerary: BaseItinerary) {
   };
 
   if (itinerary.userMode === "drive" || itinerary.userMode === "walk") {
+    const nearestCarpark = (itinerary as any).nearestCarpark
+      ? {
+          id: (itinerary as any).nearestCarpark.id,
+          name: (itinerary as any).nearestCarpark.name,
+          lat: (itinerary as any).nearestCarpark.lat,
+          lng: (itinerary as any).nearestCarpark.lng,
+          availableLots: (itinerary as any).nearestCarpark.availableLots,
+        }
+      : null;
+
     return {
       ...base,
       polylineCoords: (itinerary as any).polylineCoords ?? [],
       viaRoute: (itinerary as any).viaRoute ?? null,
+      nearestCarpark,
     };
   }
 
@@ -51,7 +62,8 @@ function serializeForMap(itinerary: BaseItinerary) {
         duration: l.duration,
         distance: l.distance,
         description: l.description,
-        geometry: l.geometry?.map((p) => ({ lat: p.lat, lng: p.lng })) ?? [],
+        geometry:
+          l.geometry?.map((p) => ({ lat: p.lat, lng: p.lng })) ?? [],
       })),
     };
   }
@@ -59,10 +71,17 @@ function serializeForMap(itinerary: BaseItinerary) {
   return base;
 }
 
-function serializeAll(itineraries: BaseItinerary[]) {
-  return itineraries.map(serializeForMap);
+export function serializeScoredItineraries(data: ItineraryScore<BaseItinerary>[]) {
+  return data.map((i) => ({
+    score: i.score,
+    itinerary: serializeForMap(i.itinerary),
+  }));
 }
 
+
+export function serializeAll(itineraries: BaseItinerary[]) {
+  return itineraries.map(serializeForMap);
+}
 export function serialize(data: ItineraryScore<BaseItinerary>[]) {
     return data.map(i => ({
         score: i.score,
@@ -121,9 +140,10 @@ export async function POST(request: NextRequest) {
         drivingItinerary.totalDuration += walkingItinerary.totalDuration;
         drivingItinerary.totalDistance += walkingItinerary.totalDistance;
         drivingItineraries.push(drivingItinerary);
+        console.log("iam the carpark", carpark)
         drivingItinerary.nearestCarpark = new Carpark({
             id: carpark.CarParkID,
-            name: carpark.Area,
+            name: carpark.Development,
             lat: lat,
             lng: lon,
             availableLots: carpark.AvailableLots
@@ -160,9 +180,18 @@ export async function POST(request: NextRequest) {
             score: b.score,
             itinerary: serializeForMap(b.itinerary)
         })),
-        driving: serializeAll(drivingItineraries),
-        public: serializeAll(publicItineraries),
-        walking: serializeAll(walkingItineraries),
+        driving: driving.map(d => ({
+            score: d.score,
+            itinerary: serializeForMap(d.itinerary)
+        })),
+        public: publicIti.map(p => ({
+            score: p.score,
+            itinerary: serializeForMap(p.itinerary)
+        })),
+        walking: walking.map(w => ({
+            score: w.score,
+            itinerary: serializeForMap(w.itinerary)
+        })),
     });
 }
 

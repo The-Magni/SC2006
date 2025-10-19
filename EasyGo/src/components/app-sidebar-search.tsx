@@ -14,6 +14,13 @@ import TextField from "@mui/material/TextField";
 import { Star, Car, Bus, Footprints, Circle, MapPinIcon, ListFilterIcon, Bookmark, LucideIcon } from "lucide-react";
 import { OneMapSearchResult } from "@/lib/onemap/onemapAutoFill";
 import type { MapDisplayHandle } from "@/components/map-display";
+import {
+  initLeafletMap,
+  clearMapOverlays,
+  drawItinerariesOnMap,
+} from "@/lib/controllers/leaflethelper-controller"
+
+
 
 type SidebarSearchProps = {
   options: OneMapSearchResult[];
@@ -28,6 +35,10 @@ type SidebarSearchProps = {
   mapRef: RefObject<MapDisplayHandle | null>;
   // Add new typing for routing data @John
 };
+
+
+
+
 
 // This is sample data.
 const data = {
@@ -160,7 +171,8 @@ const RouteCard = ({ route }: { route: {
     distance: number;
     time: number;
     score: number;
-    type: string
+    type: string;
+    assignedCarpark: string
   };}) => {
   const RouteIcon = getRouteIcon(route.type);
 
@@ -180,12 +192,15 @@ const RouteCard = ({ route }: { route: {
           <p>Time: {route.time} min</p>
         </CardContent>
         <CardFooter>
-          <p>Convenience Score: {route.score}</p>
+          <p>Convenience Score: {route.score.toFixed(2)}</p>
         </CardFooter>
       </Card>
     </div>
   )
 };
+
+
+
 
 // Add routing data prop @John
 export function AppSidebarSearch({ options, loading, debouncedFetch, setOptions, setLayoutInURL, setStartValue, setEndValue, startValue, endValue, mapRef, ...props}: SidebarSearchProps & React.ComponentProps<typeof Sidebar>) {
@@ -194,6 +209,14 @@ export function AppSidebarSearch({ options, loading, debouncedFetch, setOptions,
   const [inputEndValue, setInputEndValue] = useState("");
   const [filterWeights, setFilterWeights] = useState<Record<string, number>>(initialFilterWeights);
   const {state} = useSidebar();
+  const [routeResults, setRouteResults] = useState<{
+    best: any[];
+    driving: any[];
+    public: any[];
+    walking: any[];
+  } | null>(null);
+
+
   const isCollapsed = state === "collapsed"
   // Temporary button state
   const [isToggled, setIsToggled] = useState(false);
@@ -205,7 +228,7 @@ export function AppSidebarSearch({ options, loading, debouncedFetch, setOptions,
       [filterId]: value[0]
     }));
   };
-
+  
   // Uncomment once bug is fixed
   /*
   routes[selectedMode].map((route) => {
@@ -213,7 +236,28 @@ export function AppSidebarSearch({ options, loading, debouncedFetch, setOptions,
     // route.score = filterWeights["time-taken"] * 2;
   })
   */
+  const handleDrawRoutes = async (mode: "best" | "drive" | "public" | "walk") => {
+    if (!mapRef?.current || !routeResults) return
 
+    const leaflet = await import("leaflet")
+    const map = mapRef.current.map;
+    // Get the correct set of itineraries
+    const itineraries =
+      mode === "best"
+        ? routeResults.best.map((r: any) => r.itinerary)
+        : mode === "drive"
+        ? routeResults.driving.map((r: any) => r.itinerary)
+        : mode === "public"
+        ? routeResults.public.map((r: any) => r.itinerary)
+        : routeResults.walking.map((r: any) => r.itinerary)
+
+    // Clear and draw
+    clearMapOverlays(map)
+    drawItinerariesOnMap(map, itineraries, leaflet, {
+      drive: "red",
+      public: ["#007AFF", "#34C759", "#AF52DE"],
+    })
+  }
   useEffect(() => {
     if (startValue && endValue) {
       // Get routes and plot polyline here @John
@@ -239,6 +283,7 @@ export function AppSidebarSearch({ options, loading, debouncedFetch, setOptions,
                       variant="ghost"
                       onClick={() => {
                         setSelectedMode(mode.id)
+                        handleDrawRoutes(mode.id) // 🚀 Draw polylines on click
                       }}
                       className="flex flex-col items-center gap-1 h-12"
                     >
@@ -476,11 +521,52 @@ export function AppSidebarSearch({ options, loading, debouncedFetch, setOptions,
             )}
 
             {/* Temporary Button */}
-            {!isCollapsed && (
-              <div className="px-2 pt-4">
-                <Button className="w-full cursor-pointer" variant="outline" onClick={() => setIsToggled(prev => !prev)}>Get Routes</Button>
-              </div>
-            )}
+            <div className="px-2 pt-4">
+              <Button
+                className="w-full cursor-pointer"
+                variant="outline"
+                onClick={async () => {
+                  if (!startValue || !endValue) {
+                    alert("Please select both start and end points first.");
+                    return;
+                  }
+
+                  const body = {
+                    start: [parseFloat(startValue.LATITUDE), parseFloat(startValue.LONGITUDE)],
+                    end: [parseFloat(endValue.LATITUDE), parseFloat(endValue.LONGITUDE)],
+                    filterData: {
+                      durationWeight: filterWeights["time-taken"],
+                      walkingDistanceWeight: filterWeights["amount-of-walking"],
+                      noTransferWeight: filterWeights["number-of-transfers"],
+                      carparkAvailabilityWeight: filterWeights["carpark-availability"],
+                      busWaitTimeWeight: filterWeights["bus-wait-time"],
+                      platformDensityWeight: filterWeights["crowd-level"],
+                      fareWeight: filterWeights["fare-cost"],
+                    },
+                  };
+
+                  try {
+                    const res = await fetch("/api/test-convenience", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify(body),
+                    });
+
+                    if (!res.ok) throw new Error(`Server error ${res.status}`);
+                    const data = await res.json();
+                    console.log("Received itineraries:", data);
+
+                    setRouteResults(data);
+                  } catch (err) {
+                    console.error("Error fetching routes:", err);
+                  }
+                }}
+              >
+                Get Routes
+              </Button>
+
+              
+            </div>
           </SidebarGroupContent>
         </SidebarGroup>
 
@@ -490,21 +576,80 @@ export function AppSidebarSearch({ options, loading, debouncedFetch, setOptions,
 
         <SidebarGroup>
           <SidebarGroupLabel>Routes</SidebarGroupLabel>
+<SidebarGroupContent>
+  {!isCollapsed && (
+    <>
+      {routeResults ? (
+        (
+          selectedMode === "best"
+            ? routeResults.best
+            : selectedMode === "drive"
+            ? routeResults.driving
+            : selectedMode === "public"
+            ? routeResults.public
+            : routeResults.walking
+        )
+          .sort((a: any, b: any) =>
+            selectedMode === "best" ? b.score - a.score : 0
+          )
+          // Limit to top 3 for best
+          .slice(0, selectedMode === "best" ? 3 : undefined)
+          .map((r: any, idx: number) => {
+            const iti = r.itinerary;
+            const score = r.score ?? 0;
 
-          <SidebarGroupContent>
-            {!isCollapsed && (
-              // Use a ternary operator to choose the route list
-              (selectedMode === 'best'
-                  ? routes[selectedMode] // If selectedMode IS 'best'
-                    .sort((a, b) => b.score - a.score) // 1. Sort by score
-                    .slice(0, 3) // 2. Take only the top 3
-                  : routes[selectedMode] // If selectedMode IS NOT 'best' (e.g., 'all', 'shortest', etc.)
-              )
-                .map((route) => (
-                  <RouteCard key={route.name} route={route} />
-                ))
-            )}
-          </SidebarGroupContent>
+            const mode =
+              iti?.userMode === "drive"
+                ? "Driving"
+                : iti?.userMode === "pt"
+                ? "Public Transport"
+                : iti?.userMode === "walk"
+                ? "Walking"
+                : "Route";
+
+            const title =
+              mode === "Driving" && iti?.viaRoute
+                ? `${mode} via ${iti.viaRoute}`
+                : mode === "Public Transport"
+                ? "Public Transport Route"
+                : mode === "Walking"
+                ? "Walking Route"
+                : `Best Route (${iti?.userMode ?? "Mixed"})`;
+
+            const keyId = `${selectedMode}-${mode}-${idx}-${iti?.viaRoute ?? iti?.summary ?? "none"}`;
+
+            const distanceKm = (iti?.totalDistance ?? 0) / 1000;
+            const durationMin = Math.round((iti?.totalDuration ?? 0) / 60);
+
+            return (
+              <RouteCard
+                key={keyId}
+                route={{
+                  name: title,
+                  distance: Number.isFinite(distanceKm)
+                    ? distanceKm.toFixed(1)
+                    : 0,
+                  time: durationMin,
+                  score,
+                  type: iti?.userMode ?? "best",
+                  assignedCarpark: "test"
+                }}
+              />
+            );
+          })
+      ) : (
+        <p className="text-muted-foreground text-sm px-3 py-2">
+          No routes yet. Click “Get Routes” to fetch available options.
+        </p>
+      )}
+    </>
+  )}
+</SidebarGroupContent>
+
+
+
+
+
         </SidebarGroup>
       </SidebarContent>
 
