@@ -1,8 +1,47 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
+### Known Issues & Bugs
+
+These are issues we are actively working to resolve or features that are not yet fully functional:
+
+1.  **Public Transport Distance Inaccuracy:**
+    * The `public transport` distance metric currently only returns the **walking distance** component. It needs to be updated to reflect the full journey distance (including bus/train travel).
+2.  **Convenience Score Transparency:**
+    * The calculation and display of the **Convenience Score** needs to be made more transparent to the user, particularly concerning how the user-defined filter weights influence the final score.
+3.  **Map Overlays and Popups:**
+    * **Driving Route Overlap:** Driving routes are, by design, often visually close together (as they primarily differ by the assigned carpark). This causes their route popups on the map to **stack and overlap**
+4.  **Driving Route Card Information:**
+    * The **Driving Route Card** needs enhancement to explicitly include the **assigned carpark details** (name, distance, etc.).
+    * We also need to implement functionality to **display or highlight the chosen carpark** on the map when a driving route is selected.
+
+---
+
+### Work In Progress (WIP)
+
+1.  **User Authentication:**
+    * Implementing **Login/Signup** functionality.
+    * Enabling users to **save and retrieve preferred routes**.
+2.  **Map Integration for Public Transport:**
+    * Developing a **custom popup for public transport routes** on the map =
+3.  **Route Calculation Logic Refactor (Optimization):**
+    * Refactoring the `getRoute` logic to optimize performance. The plan is to **only calculate the Convenience Score on saved or selected routes**, rather than re-calculating all possible scores every time the initial routes are fetched.
+
+
+Populate .env.local in Easygo lib with the following
+```
+ONEMAP_EMAIL=[your onemap email]
+ONEMAP_EMAIL_PASSWORD=[your one map password]
+NEXT_PUBLIC_BASE_URL=http://localhost:3000/
+LTA_ACCESS_TOKEN=Dxbl4cb8StiHT/OWVPTyPQ==
+```
 ## Getting Started
 
-First, run the development server:
+Firstly
+
+```bash
+npm install
+```
+
+Secondly, run the development server:
 
 ```bash
 npm run dev
@@ -34,3 +73,5 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/do 
+
+
