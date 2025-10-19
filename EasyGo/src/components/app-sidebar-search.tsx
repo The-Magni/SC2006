@@ -476,9 +476,11 @@ export function AppSidebarSearch({ options, loading, debouncedFetch, setOptions,
             )}
 
             {/* Temporary Button */}
-            <div className="px-2 pt-4">
-              <Button className="w-full cursor-pointer" variant="outline" onClick={() => setIsToggled(prev => !prev)}>Get Routes</Button>
-            </div>
+            {!isCollapsed && (
+              <div className="px-2 pt-4">
+                <Button className="w-full cursor-pointer" variant="outline" onClick={() => setIsToggled(prev => !prev)}>Get Routes</Button>
+              </div>
+            )}
           </SidebarGroupContent>
         </SidebarGroup>
 

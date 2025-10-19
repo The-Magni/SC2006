@@ -5,6 +5,8 @@ import { useState, useMemo, useRef } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import LayoutDefault from "@/components/layout-default";
 import LayoutSearch from "@/components/layout-search";
+import SignupForm from "@/components/layout-signup";
+import LoginForm from "@/components/layout-login";
 import type { MapDisplayHandle } from "@/components/map-display";
 import debounce from "lodash/debounce"
 
@@ -62,6 +64,14 @@ export default function Page() {
   } else if (layout === "route") {
     return (
       <h1>TODO</h1>
+    )
+  } else if (layout === "signup") {
+    return (
+      <SignupForm />
+    )
+  } else if (layout === "login") {
+    return (
+      <LoginForm />
     )
   } else {
     return (
