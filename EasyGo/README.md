@@ -26,7 +26,7 @@ These are issues we are actively working to resolve or features that are not yet
     * Refactoring the `getRoute` logic to optimize performance. The plan is to **only calculate the Convenience Score on saved or selected routes**, rather than re-calculating all possible scores every time the initial routes are fetched.
 
 
-Populate .env.local in Easygo lib with the following
+Populate .env.local in Easygo root directory with the following
 ```
 ONEMAP_EMAIL=[your onemap email]
 ONEMAP_EMAIL_PASSWORD=[your one map password]
