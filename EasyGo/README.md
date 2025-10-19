@@ -35,6 +35,8 @@ These are issues we are actively working to resolve or features that are not yet
 3.  **Route Calculation Logic Refactor (Optimization):**
     * Refactoring the `getRoute` logic to optimize performance. The plan is to **only calculate the Convenience Score on saved or selected routes**, rather than re-calculating all possible scores every time the initial routes are fetched.
 
+Test on public domain
+https://easygo.jtsy.dev/
 
 .env.local is setup temporarily for convenience
 ```
