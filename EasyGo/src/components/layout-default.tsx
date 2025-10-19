@@ -5,7 +5,7 @@ import Autocomplete from "@mui/material/Autocomplete";
 import TextField from "@mui/material/TextField";
 import InputAdornment from '@mui/material/InputAdornment';
 import { Search } from "lucide-react"
-import type { OneMapSearchResult } from "@/lib/onemapAutoFill";
+import type { OneMapSearchResult } from "@/lib/onemap/onemapAutoFill";
 import type { MapDisplayHandle } from "@/components/map-display";
 import dynamic from "next/dynamic";
 import { RefObject } from "react";

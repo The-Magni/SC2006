@@ -1,19 +1,7 @@
 "use client"
 
-import { AppSidebar } from "@/components/app-sidebar"
-import { Search } from "@/components/ui/search" //original search, now use autocomplete from mui
-import { Separator } from "@/components/ui/separator"
-import {
-  SidebarInset,
-  SidebarProvider,
-  SidebarTrigger,
-} from "@/components/ui/sidebar"
-import dynamic from "next/dynamic"
-import {type OneMapSearchResult, fetchResults} from "@/lib/onemap/onemapAutoFill"
-import {  useState, useMemo, useRef } from "react"
-import Autocomplete from "@mui/material/Autocomplete"
-import { type OneMapSearchResult, fetchResults } from "@/lib/onemapAutoFill"
-import {useState, useMemo, useRef} from "react"
+import { type OneMapSearchResult, fetchResults } from "@/lib/onemap/onemapAutoFill"
+import { useState, useMemo, useRef } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import LayoutDefault from "@/components/layout-default";
 import LayoutSearch from "@/components/layout-search";
