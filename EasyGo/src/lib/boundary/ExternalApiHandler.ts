@@ -110,7 +110,6 @@ export class ExternalApiHandler {
     }
 
     public async fetchPlatformDensity(trainLine: string): Promise<StationData[]> {
-        console.log(trainLine);
         const baseUrl = 'https://datamall2.mytransport.sg/ltaodataservice/PCDRealTime';
         const params = new URLSearchParams({
             'TrainLine': trainLine,
@@ -127,7 +126,6 @@ export class ExternalApiHandler {
             }
         });
         if (!response.ok) {
-            console.log(response);
             throw new Error('Fail to request for platform density');
         }
         const data = await response.json();   

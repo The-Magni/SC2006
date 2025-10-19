@@ -15,6 +15,12 @@ import { calCrow, getStopNumber, calDistancePointLine } from "../utils"
 import { CarparkData } from "../boundary/ExternalApiHandler"
 import { ConvenienceScoreFilterPreference } from "../entityclass/ConvenienceScoreFilterPreference"
 
+export type ItineraryScore<T extends BaseItinerary> = {
+	itinerary: T;
+	score: number;
+};
+
+
 
 export function parseCoords(coordStr: string): { lat: number; lng: number } | null {
 	if (!coordStr) return null
@@ -54,7 +60,6 @@ export class ItineraryController {
 		const legs: RouteLeg[] = []
 
 		for (const leg of legsRaw) {
-			//console.log(leg)
 			const mode = leg.mode?.toUpperCase() ?? ""
 			if (mode === "BUS") legs.push(new BusRouteLeg(leg))
 			else if (["RAIL", "SUBWAY", "TRAIN"].includes(mode)) legs.push(new TrainRouteLeg(leg))
@@ -87,8 +92,6 @@ export class ItineraryController {
       for (const instr of routeInstructions) {
         legs.push(new DrivingRouteLeg(instr))
       }
-      console.log("the full geometry in build driving itinerary", fullGeometry)
-      console.log("this is a route block",routeBlock.viaRoute)
 
       //temp empty carpark 
       const emptyCarpark = new Carpark({
@@ -118,19 +121,19 @@ export class ItineraryController {
         itineraries.push(buildDrivingItinerary(json, "fastest"))
       }
 
-      // Secondary (shortest) route
-      if (json.phyroute?.route_instructions) {
-        itineraries.push(buildDrivingItinerary(json.phyroute, "shortest"))
-      }
+    //   // Secondary (shortest) route
+    //   if (json.phyroute?.route_instructions) {
+    //     itineraries.push(buildDrivingItinerary(json.phyroute, "shortest"))
+    //   }
 
-      // Alternative suggestions (array)
-      if (Array.isArray(json.alternativeroute)) {
-        json.alternativeroute.forEach((alt: any, idx: number) => {
-          if (alt.route_instructions) {
-            itineraries.push(buildDrivingItinerary(alt, `alternative_${idx + 1}`))
-          }
-        })
-      }
+    //   // Alternative suggestions (array)
+    //   if (Array.isArray(json.alternativeroute)) {
+    //     json.alternativeroute.forEach((alt: any, idx: number) => {
+    //       if (alt.route_instructions) {
+    //         itineraries.push(buildDrivingItinerary(alt, `alternative_${idx + 1}`))
+    //       }
+    //     })
+    //   }
     }
 
     //
@@ -324,7 +327,6 @@ export class ItineraryController {
 				count++;
 			}
 			if (count === 0) {
-				console.log('No bus');
 				return;
 			}
 			totalWaitTime += waitTime / count;
@@ -333,10 +335,6 @@ export class ItineraryController {
 	}
 
 	public rankItineraries(itineraries: BaseItinerary[], userPreference: ConvenienceScoreFilterPreference) {
-		type ItineraryScore<T extends BaseItinerary> = {
-			itinerary: T;
-			score: number;
-		};
 		const itineraryScore: ItineraryScore<BaseItinerary>[] = [];
 		for (const itinerary of itineraries) {
 			if (
