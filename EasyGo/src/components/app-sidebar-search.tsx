@@ -12,7 +12,7 @@ import { NavUser } from "@/components/nav-user"
 import Autocomplete from "@mui/material/Autocomplete";
 import TextField from "@mui/material/TextField";
 import { Star, Car, Bus, Footprints, Circle, MapPinIcon, ListFilterIcon, Bookmark, LucideIcon } from "lucide-react";
-import { OneMapSearchResult } from "@/lib/onemapAutoFill";
+import { OneMapSearchResult } from "@/lib/onemap/onemapAutoFill";
 import type { MapDisplayHandle } from "@/components/map-display";
 
 type SidebarSearchProps = {
