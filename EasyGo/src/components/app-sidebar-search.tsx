@@ -520,7 +520,9 @@ export function AppSidebarSearch({ options, loading, debouncedFetch, setOptions,
               </div>
             )}
 
-            {/* Temporary Button */}
+
+            
+            {!isCollapsed && (
             <div className="px-2 pt-4">
               <Button
                 className="w-full cursor-pointer"
@@ -567,16 +569,19 @@ export function AppSidebarSearch({ options, loading, debouncedFetch, setOptions,
 
               
             </div>
+            )}
+            
+            {/* Temporary Button */}
+
           </SidebarGroupContent>
         </SidebarGroup>
 
-        {!isCollapsed && (
-          <Separator />
-        )}
+
 
         <SidebarGroup>
           <SidebarGroupLabel>Routes</SidebarGroupLabel>
 <SidebarGroupContent>
+
   {!isCollapsed && (
     <>
       {routeResults ? (
