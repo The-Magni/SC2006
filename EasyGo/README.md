@@ -12,7 +12,17 @@ These are issues we are actively working to resolve or features that are not yet
 4.  **Driving Route Card Information:**
     * The **Driving Route Card** needs enhancement to explicitly include the **assigned carpark details** (name, distance, etc.).
     * We also need to implement functionality to **display or highlight the chosen carpark** on the map when a driving route is selected.
+5.  **Certain start, end locations issues**
 
+    *Locations Known to work:
+    Yew Tee MRT Station > Harbourfront MRT Station
+    Compass One > Serangoon Nex
+
+    *Fail
+    Chua Chu Kang Hindu Cemetry > The Japanese Cemetry Park
+
+    * Some areas will fail to generate routes if bus data is unable to generate (critical)
+    * either through bus timing / other reasons. will need to handle such empty edge casesxz.
 ---
 
 ### Work In Progress (WIP)
@@ -26,12 +36,7 @@ These are issues we are actively working to resolve or features that are not yet
     * Refactoring the `getRoute` logic to optimize performance. The plan is to **only calculate the Convenience Score on saved or selected routes**, rather than re-calculating all possible scores every time the initial routes are fetched.
 
 
-Populate .env.local in Easygo root directory with the following
-```
-ONEMAP_EMAIL=[your onemap email]
-ONEMAP_EMAIL_PASSWORD=[your one map password]
-NEXT_PUBLIC_BASE_URL=http://localhost:3000/
-LTA_ACCESS_TOKEN=Dxbl4cb8StiHT/OWVPTyPQ==
+.env.local is setup temporarily for convenience
 ```
 ## Getting Started
 
