@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import {RefObject, useState} from "react";
+import { RefObject, useState, useEffect } from "react";
 import { Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarRail, useSidebar } from "@/components/ui/sidebar"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import { Card, CardAction, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
@@ -11,7 +11,7 @@ import { Slider } from "@/components/ui/slider"
 import { NavUser } from "@/components/nav-user"
 import Autocomplete from "@mui/material/Autocomplete";
 import TextField from "@mui/material/TextField";
-import { Star, Car, Bus, Footprints, Circle, MapPinIcon, ListFilterIcon, Bookmark } from "lucide-react";
+import { Star, Car, Bus, Footprints, Circle, MapPinIcon, ListFilterIcon, Bookmark, LucideIcon } from "lucide-react";
 import { OneMapSearchResult } from "@/lib/onemapAutoFill";
 import type { MapDisplayHandle } from "@/components/map-display";
 
@@ -41,24 +41,40 @@ const data = {
 // Sample routing data
 const routes = {
   best: [
+    // --- Drive ---
     { name: "via Seletar Expressway", distance: 32.9, time: 54, score: 7.8, type: "drive" },
     { name: "via PIE & Clementi Rd", distance: 28.5, time: 45, score: 8.5, type: "drive" },
+    { name: "KJE/BKE Route", distance: 35.1, time: 50, score: 7.3, type: "drive" }, // New
+
+    // --- Public ---
     { name: "MRT & Bus 190/961", distance: 35, time: 85, score: 6.2, type: "public" },
     { name: "MRT via North-South Line", distance: 40, time: 70, score: 7.5, type: "public" },
+    { name: "Express Bus 151", distance: 30, time: 65, score: 6.8, type: "public" }, // New
+    { name: "LRT/MRT via Circle Line", distance: 42, time: 95, score: 5.9, type: "public" }, // New
+
+    // --- Walk ---
     { name: "Direct Walk through Park", distance: 3.5, time: 60, score: 9.1, type: "walk" },
-    { name: "Walk via Main Street", distance: 4.2, time: 75, score: 8.0, type: "walk" }
+    { name: "Walk via Main Street", distance: 4.2, time: 75, score: 8.0, type: "walk" },
+    { name: "Scenic River Walk", distance: 4.8, time: 80, score: 7.9, type: "walk" }, // New
   ],
   drive: [
     { name: "via Seletar Expressway", distance: 32.9, time: 54, score: 7.8, type: "drive" },
     { name: "via PIE & Clementi Rd", distance: 28.5, time: 45, score: 8.5, type: "drive" },
+    { name: "KJE/BKE Route", distance: 35.1, time: 50, score: 7.3, type: "drive" }, // New
+    { name: "Coastal Highway Route", distance: 30.5, time: 48, score: 8.2, type: "drive" }, // New
   ],
   public: [
     { name: "MRT & Bus 190/961", distance: 35, time: 85, score: 6.2, type: "public" },
     { name: "MRT via North-South Line", distance: 40, time: 70, score: 7.5, type: "public" },
+    { name: "Express Bus 151", distance: 30, time: 65, score: 6.8, type: "public" }, // New
+    { name: "LRT/MRT via Circle Line", distance: 42, time: 95, score: 5.9, type: "public" }, // New
+    { name: "Ferry + Bus Connection", distance: 25, time: 105, score: 5.1, type: "public" }, // New
   ],
   walk: [
     { name: "Direct Walk through Park", distance: 3.5, time: 60, score: 9.1, type: "walk" },
-    { name: "Walk via Main Street", distance: 4.2, time: 75, score: 8.0, type: "walk" }
+    { name: "Walk via Main Street", distance: 4.2, time: 75, score: 8.0, type: "walk" },
+    { name: "Scenic River Walk", distance: 4.8, time: 80, score: 7.9, type: "walk" }, // New
+    { name: "Shortest Sidewalk Path", distance: 3.2, time: 55, score: 8.8, type: "walk" }, // New
   ]
 };
 
@@ -71,44 +87,72 @@ const transportModes = [
 
 const filterConfig = {
   best: [
-    { label: "Time Taken", id: "time-taken-best" },
-    { label: "Amount of Walking", id: "amount-of-walking-best" },
-    { label: "Number of Transfers", id: "number-of-transfers-best" },
-    { label: "Crowd Level", id: "crowd-level-best" },
-    { label: "Bus Wait Time", id: "bus-wait-time-best" },
-    { label: "Fare Cost", id: "fare-cost-best" },
-    { label: "Carpark Availability", id: "carpark-availability-best" },
+    { label: "Time Taken", id: "time-taken" },
+    { label: "Amount of Walking", id: "amount-of-walking" },
+    { label: "Number of Transfers", id: "number-of-transfers" },
+    { label: "Crowd Level", id: "crowd-level" },
+    { label: "Bus Wait Time", id: "bus-wait-time" },
+    { label: "Fare Cost", id: "fare-cost" },
+    { label: "Carpark Availability", id: "carpark-availability" },
   ],
   drive: [
-    { label: "Time Taken", id: "time-taken-drive" },
-    { label: "Amount of Walking", id: "amount-of-walking-drive" },
-    { label: "Carpark Availability", id: "carpark-availability-drive" },
+    { label: "Time Taken", id: "time-taken" },
+    { label: "Amount of Walking", id: "amount-of-walking" },
+    { label: "Carpark Availability", id: "carpark-availability" },
   ],
   public: [
-    { label: "Time Taken", id: "time-taken-public" },
-    { label: "Amount of Walking", id: "amount-of-walking-public" },
-    { label: "Number of Transfers", id: "number-of-transfers-public" },
-    { label: "Crowd Level", id: "crowd-level-public" },
-    { label: "Bus Wait Time", id: "bus-wait-time-public" },
-    { label: "Fare Cost", id: "fare-cost-public" },
+    { label: "Time Taken", id: "time-taken" },
+    { label: "Amount of Walking", id: "amount-of-walking" },
+    { label: "Number of Transfers", id: "number-of-transfers" },
+    { label: "Crowd Level", id: "crowd-level" },
+    { label: "Bus Wait Time", id: "bus-wait-time" },
+    { label: "Fare Cost", id: "fare-cost" },
   ],
   walk: [
-    { label: "Time Taken", id: "time-taken-walk" },
-    { label: "Amount of Walking", id: "amount-of-walking-walk" },
+    { label: "Time Taken", id: "time-taken" },
+    { label: "Amount of Walking", id: "amount-of-walking" },
   ]
 } as const;
 
+// Initialize filter weights for all filter IDs
+const initialFilterWeights: Record<string, number> = Object.keys(filterConfig).reduce(
+  (acc, mode) => ({
+    ...acc,
+    ...filterConfig[mode as keyof typeof filterConfig].reduce(
+      (innerAcc, filter) => ({
+        ...innerAcc,
+        [filter.id]: 5, // Default value of 5 for all filters
+      }),
+      {} as Record<string, number>
+    ),
+  }),
+  {} as Record<string, number>
+);
+
 // Reusable FilterItem component to reduce repetition
-const FilterItem = ({ label }: { label: string }) => (
+const FilterItem = ({ label, value, onValueChange }: { label: string; value: number; onValueChange: (value: number[]) => void; }) => (
   <div className="py-3">
     <span className="text-white">{label}</span>
-    <Slider className="py-3" defaultValue={[5]} max={10} step={1} />
+    <Slider className="py-3" value={[value]} min={0} max={10} step={1} onValueChange={onValueChange} />
     <div className="flex items-center justify-between text-muted-foreground text-xs">
       <span>Least Important</span>
       <span>Most Important</span>
     </div>
   </div>
 );
+
+const getRouteIcon = (type: string): LucideIcon => {
+  switch (type) {
+    case 'drive':
+      return Car;
+    case 'public':
+      return Bus;
+    case 'walk':
+      return Footprints;
+    default:
+      return MapPinIcon; // Fallback icon
+  }
+};
 
 // Reusable RouteCard component to reduce repetition
 const RouteCard = ({ route }: { route: {
@@ -117,31 +161,65 @@ const RouteCard = ({ route }: { route: {
     time: number;
     score: number;
     type: string
-  };}) => (
-  <div className="px-1 pt-4">
-    <Card className="cursor-pointer">
-      <CardHeader>
-        <CardTitle>{route.name}</CardTitle>
-        <CardDescription>Distance: {route.distance}</CardDescription>
-        <CardAction><Bookmark className="h-5 w-5" /></CardAction>
-      </CardHeader>
-      <CardContent>
-        <p>Time: {route.time}</p>
-      </CardContent>
-      <CardFooter>
-        <p>Convenience Score: {route.score}</p>
-      </CardFooter>
-    </Card>
-  </div>
-);
+  };}) => {
+  const RouteIcon = getRouteIcon(route.type);
+
+  return (
+    <div className="px-1 pt-4">
+      <Card className="cursor-pointer">
+        <CardHeader>
+          <div className="flex items-center">
+            <RouteIcon className="h-5 w-5 mr-2" />
+
+            <CardTitle>{route.name}</CardTitle>
+          </div>
+          <CardDescription>Distance: {route.distance} km</CardDescription>
+          <CardAction><Bookmark className="h-5 w-5 hover:text-blue-500 transition duration-150" /></CardAction>
+        </CardHeader>
+        <CardContent>
+          <p>Time: {route.time} min</p>
+        </CardContent>
+        <CardFooter>
+          <p>Convenience Score: {route.score}</p>
+        </CardFooter>
+      </Card>
+    </div>
+  )
+};
 
 // Add routing data prop @John
 export function AppSidebarSearch({ options, loading, debouncedFetch, setOptions, setLayoutInURL, setStartValue, setEndValue, startValue, endValue, mapRef, ...props}: SidebarSearchProps & React.ComponentProps<typeof Sidebar>) {
   const [selectedMode, setSelectedMode] = useState<"best" | "drive" | "public" | "walk">("best");
   const [inputStartValue, setInputStartValue] = useState("");
   const [inputEndValue, setInputEndValue] = useState("");
+  const [filterWeights, setFilterWeights] = useState<Record<string, number>>(initialFilterWeights);
   const {state} = useSidebar();
   const isCollapsed = state === "collapsed"
+  // Temporary button state
+  const [isToggled, setIsToggled] = useState(false);
+
+  // Handle filter value changes
+  const handleFilterChange = (filterId: string, value: number[]) => {
+    setFilterWeights((prev) => ({
+      ...prev,
+      [filterId]: value[0]
+    }));
+  };
+
+  // Uncomment once bug is fixed
+  /*
+  routes[selectedMode].map((route) => {
+    // Update route.score here
+    // route.score = filterWeights["time-taken"] * 2;
+  })
+  */
+
+  useEffect(() => {
+    if (startValue && endValue) {
+      // Get routes and plot polyline here @John
+      console.log("Get Route");
+    }
+  }, [isToggled]); // Dependencies: Only run when 'isToggled' change
 
   return (
     <Sidebar
@@ -388,7 +466,7 @@ export function AppSidebarSearch({ options, loading, debouncedFetch, setOptions,
                     <AccordionContent>
                       {
                         filterConfig[selectedMode].map((filter) => (
-                          <FilterItem key={filter.id} label={filter.label} />
+                          <FilterItem key={filter.id} label={filter.label} value={filterWeights[filter.id]} onValueChange={(value) => handleFilterChange(filter.id, value)} />
                         ))
                       }
                     </AccordionContent>
@@ -396,6 +474,11 @@ export function AppSidebarSearch({ options, loading, debouncedFetch, setOptions,
                 </Accordion>
               </div>
             )}
+
+            {/* Temporary Button */}
+            <div className="px-2 pt-4">
+              <Button className="w-full cursor-pointer" variant="outline" onClick={() => setIsToggled(prev => !prev)}>Get Routes</Button>
+            </div>
           </SidebarGroupContent>
         </SidebarGroup>
 
@@ -408,9 +491,16 @@ export function AppSidebarSearch({ options, loading, debouncedFetch, setOptions,
 
           <SidebarGroupContent>
             {!isCollapsed && (
-              routes[selectedMode].map((route) => (
-                <RouteCard key={route.name} route={route} />
-              ))
+              // Use a ternary operator to choose the route list
+              (selectedMode === 'best'
+                  ? routes[selectedMode] // If selectedMode IS 'best'
+                    .sort((a, b) => b.score - a.score) // 1. Sort by score
+                    .slice(0, 3) // 2. Take only the top 3
+                  : routes[selectedMode] // If selectedMode IS NOT 'best' (e.g., 'all', 'shortest', etc.)
+              )
+                .map((route) => (
+                  <RouteCard key={route.name} route={route} />
+                ))
             )}
           </SidebarGroupContent>
         </SidebarGroup>

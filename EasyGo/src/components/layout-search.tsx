@@ -40,7 +40,6 @@ export default function LayoutSearch(
     if (endValue) {
       if (startValue) {
         // Get routes and plot polyline here @John
-        console.log("Get Route");
       } else {
         mapRef.current?.panTo(parseFloat(endValue.LATITUDE), parseFloat(endValue.LONGITUDE), endValue.ADDRESS)
       }
