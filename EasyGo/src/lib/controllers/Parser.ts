@@ -67,7 +67,7 @@ export interface ItineraryData<T> {
 
 export class Parser {
     private static deserializeRouteLeg(data: LegData): RouteLeg {
-        const leg = new RouteLeg({});
+        const leg = new RouteLeg('base');
         leg.mode = data.mode;
         leg.duration = data.duration;
         leg.distance = data.distance;
