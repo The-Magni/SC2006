@@ -14,7 +14,7 @@ import { ExternalApiHandler } from "../boundary/ExternalApiHandler"
 import { calCrow, getStopNumber, calDistancePointLine } from "../utils"
 import { CarparkData } from "../boundary/ExternalApiHandler"
 import { ConvenienceScoreFilterPreference } from "../entityclass/ConvenienceScoreFilterPreference"
-import { OneMapPTResponse } from "@/lib/onemap/deserializedClasses/dzPtRoutes"
+import { Leg, OneMapPTResponse, TransitLeg, WalkLeg } from "@/lib/onemap/deserializedClasses/dzPtRoutes"
 import { OneMapDrivingRouteResponse } from "@/lib/onemap/deserializedClasses/dzDrivingRoutes"
 import { OneMapWalkingRouteResponse } from "@/lib/onemap/deserializedClasses/dzWalkRoutes"
 import { Bound } from "../entityclass/ConvenienceScore"
@@ -66,10 +66,10 @@ export class ItineraryController {
 
 		for (const leg of legsRaw) {
 			const mode = leg.mode?.toUpperCase() ?? ""
-			if (mode === "BUS") legs.push(new BusRouteLeg(leg))
-			else if (["RAIL", "SUBWAY", "TRAIN"].includes(mode)) legs.push(new TrainRouteLeg(leg))
-			else if (mode === "WALK") legs.push(new WalkingRouteLeg(leg))
-			else legs.push(new RouteLeg(leg))
+			if (mode === "BUS") legs.push(new BusRouteLeg(leg as TransitLeg))
+			else if (["RAIL", "SUBWAY", "TRAIN"].includes(mode)) legs.push(new TrainRouteLeg(leg as TransitLeg))
+			else if (mode === "WALK") legs.push(new WalkingRouteLeg(leg as WalkLeg))
+			else legs.push(new RouteLeg('', leg))
 		}
 
 		const iti = new PublicItinerary(legs)
