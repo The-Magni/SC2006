@@ -3,6 +3,7 @@ import type { ConvenienceScore } from "./ConvenienceScore"
 import { ConvenienceScoreFactory } from "./ConvenienceScore"
 import { RouteLeg } from "./RouteLeg"
 import { SimpleWalkingRouteLeg } from "./SimpleWalkingRouteLeg"
+import { WalkingRouteLeg } from "./WalkingRouteLeg"
 
 export abstract class BaseItinerary {
   legs: RouteLeg[]
@@ -14,6 +15,7 @@ export abstract class BaseItinerary {
   weather: string;
   incidents: Incident[];
   convenienceScore: ConvenienceScore;
+  walkingDistance: number;
   abstract summary: string;
 
   constructor(legs: RouteLeg[], userMode?: string) {
@@ -25,6 +27,11 @@ export abstract class BaseItinerary {
     this.weather = '' // init an empty string, will take the value later from ItineraryController
     this.incidents = [];
     this.convenienceScore = ConvenienceScoreFactory.create(this);
+    this.walkingDistance = 0;
+    for (const leg of this.legs) {
+      if (leg instanceof WalkingRouteLeg || leg instanceof SimpleWalkingRouteLeg)
+        this.walkingDistance += leg.distance;
+    }
 	}
 
   public abstract get mode(): string;
@@ -33,14 +40,5 @@ export abstract class BaseItinerary {
     return this.legs
       .filter((l) => l.geometry)
       .map((l) => l.geometry!.map((p) => [p.lat, p.lng]))
-  }
-
-  public getWalkingDistance(): number {
-	let walkingDistance = 0;
-	for (const leg of this.legs) {
-		if (leg instanceof SimpleWalkingRouteLeg)
-			walkingDistance += leg.distance;
-	}
-	return walkingDistance;
   }
 }

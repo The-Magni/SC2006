@@ -272,7 +272,7 @@ export class ItineraryController {
 			const incidents = await this.api.fetchTrafficIncident();
 			const seen = new Set<string>();
 			const coords = itinerary.polylineCoords;
-			for (let i = 0; i < coords.length - 1; i++) {
+			for (let i = 0; i < coords.length - 2; i++) {
 				for (const incident of incidents) {
 					if (seen.has(`${incident.Latitude}, ${incident.Longitude}`))
 						continue;
@@ -298,15 +298,15 @@ export class ItineraryController {
 
 	public async getWeatherData(itinerary: BaseItinerary): Promise<void> {
 		// get data of the weather station that is closest to the midpoint of the itinerary
+		if (!(itinerary instanceof DrivingItinerary) && !(itinerary instanceof SimpleWalkingItinerary))
+			return; // temporary patch because public doesnt have polylineCoords yet
 		try {
 			const [metadata, forecast] = await this.api.fetchWeatherData();
-			const firstLeg = itinerary.legs[0];
-			const lastLeg = itinerary.legs[itinerary.legs.length-1];
-			const start = firstLeg.geometry[0];
-			const end = lastLeg.geometry[lastLeg.geometry.length-1];
+			const start = itinerary.polylineCoords[0];
+			const end = itinerary.polylineCoords[itinerary.polylineCoords.length-1];
 			const midpoint = {
-				lat: (start.lat + end.lat) / 2,
-				lon: (start.lng + end.lng) / 2
+				lat: (start[0] + end[0]) / 2,
+				lon: (start[1] + end[1]) / 2
 			}; // approximate for small distances (work ok for singapore)
 			const distances = metadata.map(d => ({
 				name: d.name, 
@@ -328,7 +328,7 @@ export class ItineraryController {
 			}
 			itinerary.weather = weatherData;
 		} catch (e) {
-			console.log(e);
+			console.error(e);
 			throw new Error('Fail to get weather data');
 		}
 	}

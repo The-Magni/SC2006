@@ -1,3 +1,4 @@
+import { BaseItinerary } from "../entityclass/BaseItinerary";
 import { Carpark } from "../entityclass/Carpark";
 import { DrivingItinerary } from "../entityclass/DrivingItinerary";
 import { PublicItinerary } from "../entityclass/PublicItinerary";
@@ -12,9 +13,10 @@ interface LegData {
     geometry: {lat: number; lng: number;}[]
 }
 
-interface PublicItineraryData {
+export interface PublicItineraryData {
     totalDuration: number;
     totalDistance: number;
+    walkingDistance: number;
     score: number;
     summary: string;
     totalTransfers: number;
@@ -24,9 +26,10 @@ interface PublicItineraryData {
     legs: LegData[];
 }
 
-interface DrivingItineraryData {
+export interface DrivingItineraryData {
     totalDuration: number;
     totalDistance: number;
+    walkingDistance: number;
     score: number;
     summary: string;
     polyLineCoords: [number, number][];
@@ -40,15 +43,24 @@ interface DrivingItineraryData {
     };
 }
 
-interface WalkingItineraryData {
+export interface WalkingItineraryData {
     totalDuration: number;
     totalDistance: number;
+    walkingDistance: number;
     score: number;
     summary: string;
     polyLineCoords: [number, number][];
 }
 
-interface ItineraryData<T> {
+export interface BaseItineraryData {
+    totalDuration: number; 
+    totalDistance: number;
+    legs: LegData[];
+    score: number;
+    summary: string;
+}
+
+export interface ItineraryData<T> {
     mode: string;
     data: T;
 }
@@ -70,6 +82,7 @@ export class Parser {
             data: {
                 totalDuration: itinerary.totalDuration,
                 totalDistance: itinerary.totalDistance,
+                walkingDistance: itinerary.walkingDistance,
                 score: itinerary.convenienceScore.getScore(),
                 summary: itinerary.summary,
                 totalTransfers: itinerary.totalTransfers,
@@ -87,12 +100,13 @@ export class Parser {
         }
     }
 
-    public static serializeDrivivingItinerary(itinerary: DrivingItinerary): ItineraryData<DrivingItineraryData> {
+    public static serializeDrivingItinerary(itinerary: DrivingItinerary): ItineraryData<DrivingItineraryData> {
         return {
             mode: itinerary.mode,
             data: {
                 totalDuration: itinerary.totalDuration,
                 totalDistance: itinerary.totalDistance,
+                walkingDistance: itinerary.walkingDistance,
                 score: itinerary.convenienceScore.getScore(),
                 summary: itinerary.summary,
                 polyLineCoords: itinerary.polylineCoords,
@@ -114,12 +128,32 @@ export class Parser {
             data: {
                 totalDuration: itinerary.totalDuration,
                 totalDistance: itinerary.totalDistance,
+                walkingDistance: itinerary.walkingDistance,
                 polyLineCoords: itinerary.polylineCoords,
                 summary: itinerary.summary,
                 score: itinerary.convenienceScore.getScore()
             }
         }
     } 
+
+    public static serializeBaseItinenerary(itinerary: BaseItinerary): ItineraryData<BaseItineraryData> {
+        return {
+            mode: itinerary.mode,
+            data: {
+                totalDuration: itinerary.totalDuration,
+                totalDistance: itinerary.totalDistance,
+                legs: itinerary.legs.map(l => ({
+                    mode: l.mode,
+                    duration: l.duration,
+                    distance: l.distance,
+                    description: l.description,
+                    geometry: l.geometry.map(p => ({lat: p.lat, lng: p.lng}))
+                })),
+                score: itinerary.convenienceScore.getScore(),
+                summary: itinerary.summary
+            }
+        }
+    }
 
     public static deserializePublicItinerary(data: ItineraryData<PublicItineraryData>): PublicItinerary {
         if (data.mode !== 'PublicItinerary')
@@ -134,6 +168,7 @@ export class Parser {
         itinerary.busWaitTime = data.data.busWaitTime;
         itinerary.platformDensity = data.data.platformDensity;
         itinerary.legs = data.data.legs.map(data => Parser.deserializeRouteLeg(data));
+        itinerary.walkingDistance = data.data.walkingDistance;
         return itinerary;
     }
 
@@ -148,6 +183,7 @@ export class Parser {
         itinerary.polylineCoords = data.data.polyLineCoords;
         itinerary.viaRoute = data.data.viaRoute;
         itinerary.nearestCarpark = new Carpark(data.data.nearestCarpark);
+        itinerary.walkingDistance = data.data.walkingDistance;
         return itinerary;
     }
 
@@ -160,6 +196,7 @@ export class Parser {
         itinerary.convenienceScore.setScore(data.data.score);
         itinerary.summary = data.data.summary;
         itinerary.polylineCoords = data.data.polyLineCoords;
+        itinerary.walkingDistance = data.data.walkingDistance;
         return itinerary;
     }
 }

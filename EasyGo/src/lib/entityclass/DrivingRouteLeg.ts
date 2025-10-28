@@ -10,7 +10,6 @@ export class DrivingRouteLeg extends RouteLeg {
 
   constructor(data: any, fullGeometry?: string) {
     super({ mode: "DRIVE" })
-    console.log("i am in the consttructor now", data)
 
     this.instruction = data[0] ?? ""
     this.roadName = data[1] ?? "Unnamed Road"
