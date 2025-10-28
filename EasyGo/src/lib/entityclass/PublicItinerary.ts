@@ -3,25 +3,20 @@ import { BusRouteLeg } from "./BusRouteLeg"
 import { TrainRouteLeg } from "./TrainRouteLeg"
 import { WalkingRouteLeg } from "./WalkingRouteLeg"
 import { RouteLeg } from "./RouteLeg"
-import { ConvenienceScore, ConvenienceScoreFactory } from "./ConvenienceScore"
 
 export class PublicItinerary extends BaseItinerary {
   userMode?: string
   busWaitTime: number;
   platformDensity: number;
-  convenienceScore: ConvenienceScore<PublicItinerary>
+  summary: string;
  
   constructor(legs: RouteLeg[]) {
     super(legs, "pt")
     this.userMode = "pt"
     this.busWaitTime = 0; // init so that typescript doesnt complain
     this.platformDensity = 0; // same thing
-    this.convenienceScore = ConvenienceScoreFactory.create<PublicItinerary>(this);
-  }
-
-  get summary(): string {
     const details = this.legs.map((l) => l.getDescription()).join("<br>")
-    return `
+    this.summary = `
       Public Transport<br>
       Duration: ${(this.totalDuration / 60).toFixed(0)} mins<br>
       Distance: ${(this.totalDistance / 1000).toFixed(2)} km<br>
@@ -29,7 +24,13 @@ export class PublicItinerary extends BaseItinerary {
       ${details}
     `
   }
+  public get mode() {
+    return 'PublicItinerary';
+  }
 /*
+
+  
+
   static fromPT(data: any): PublicItinerary[] {
     const itineraries = data.plan?.itineraries || []
 

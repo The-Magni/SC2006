@@ -16,10 +16,10 @@ interface StationData {
 }
 
 export interface Incident {
-    type: string;
-    latitude: number;
-    longitude: number;
-    message: string;
+    Type: string;
+    Latitude: number;
+    Longitude: number;
+    Message: string;
 }
 
 interface AreaMetadata {
@@ -68,10 +68,11 @@ export class ExternalApiHandler {
                 }
             }
         );
-        if (response.ok) {
-            throw new Error('Error fetch data');
+        if (!response.ok) {
+            throw new Error('Fail to fetch traffic incidents API');
         }
-        const incidents = await response.json() as Incident[];
+        const data = await response.json();
+        const incidents: Incident[] = data.value;
         return incidents;
     }
 
@@ -82,9 +83,11 @@ export class ExternalApiHandler {
                 'X-Api-Key': 'YOUR_SECRET_TOKEN'
             }
         });
+        if (!response.ok)
+            throw new Error('Fail to fetch weather API');
         const data = await response.json();
         const metadata: AreaMetadata[] = data.data.area_metadata;
-        const forecast: WeatherData[] = data.items.forecasts;
+        const forecast: WeatherData[] = data.data.items[0].forecasts;
         return [metadata, forecast];
     }
 
@@ -126,14 +129,14 @@ export class ExternalApiHandler {
             }
         });
         if (!response.ok) {
-            throw new Error('Fail to request for platform density');
+            throw new Error('Fail to fetch platform density API');
         }
         const data = await response.json();   
         const stationDataList: StationData[] = data.value;
         return stationDataList;      
     }  
 
-    public async fetchBusArrivalTime(busStopCode: string, serviceNo: string) {
+    public async fetchBusArrivalTime(busStopCode: string, serviceNo: string): Promise<BusData[]> {
         const baseUrl = 'https://datamall2.mytransport.sg/ltaodataservice/v3/BusArrival';
         const params = new URLSearchParams({
             'BusStopCode': busStopCode,
@@ -150,18 +153,12 @@ export class ExternalApiHandler {
             }
         });
         if (!response.ok)
-            throw new Error('Fail to fetch bus arrival time');
+            throw new Error('Fail to fetch bus arrival time API');
         const data = await response.json();
-        const firstBus: BusData = data.Services[0].NextBus;
-        const secondBus: BusData = data.Services[0].NextBus2;
-        const thirdBus: BusData = data.Services[0].NextBus3;
-        if (!firstBus)
-            return []
-        else if (!secondBus)
-            return [firstBus];
-        else if (!thirdBus)
-            return [firstBus, secondBus];
-        else
-            return [firstBus, secondBus, thirdBus];
+        const firstBus: BusData | undefined = data.Services[0]?.NextBus;
+        const secondBus: BusData | undefined = data.Services[0]?.NextBus2;
+        const thirdBus: BusData | undefined = data.Services[0]?.NextBus3;
+        const result = [firstBus, secondBus, thirdBus].filter(Boolean);
+        return result as BusData[];
     }
 }

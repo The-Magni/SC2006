@@ -17,6 +17,7 @@ import { ConvenienceScoreFilterPreference } from "../entityclass/ConvenienceScor
 import { OneMapPTResponse } from "@/lib/onemap/deserializedClasses/dzPtRoutes"
 import { OneMapDrivingRouteResponse } from "@/lib/onemap/deserializedClasses/dzDrivingRoutes"
 import { OneMapWalkingRouteResponse } from "@/lib/onemap/deserializedClasses/dzWalkRoutes"
+import { Bound } from "../entityclass/ConvenienceScore"
 
 export type ItineraryScore<T extends BaseItinerary> = {
 	itinerary: T;
@@ -185,19 +186,26 @@ export class ItineraryController {
 	}
 
 	public async getNearestCarpark(endLat: number, endLon: number) {
-		const allCarParks = await this.api.fetchCarparkAvailability();
-		const nearestCarparks: {carpark: CarparkData, distance: number }[] = [];
-		allCarParks.forEach(carparkData => {
-			const location = carparkData.Location;
-			const [lat, lon] = location.split(' ').map(parseFloat);
-			const distance = calCrow(lat, lon, endLat, endLon);
-			nearestCarparks.push({
-				carpark: carparkData,
-				distance: distance
-			});
-		});
-		nearestCarparks.sort((a, b) => a.distance - b.distance);
-		return nearestCarparks.slice(0, Math.min(3, nearestCarparks.length));
+		for (let attempt = 0; attempt < 3; attempt++) { //retry 3 times
+			try {
+				const allCarParks = await this.api.fetchCarparkAvailability();
+				const nearestCarparks: {carpark: CarparkData, distance: number }[] = [];
+				allCarParks.forEach(carparkData => {
+					const location = carparkData.Location;
+					const [lat, lon] = location.split(' ').map(parseFloat);
+					const distance = calCrow(lat, lon, endLat, endLon);
+					nearestCarparks.push({
+						carpark: carparkData,
+						distance: distance
+					});
+				});
+				nearestCarparks.sort((a, b) => a.distance - b.distance);
+				return nearestCarparks.slice(0, Math.min(3, nearestCarparks.length));
+			} catch (e) {
+				console.error(e);
+				throw new Error('Fail to get carpark data');
+			}
+		}
 	}
 
 	private async getRoutePlatformDensity(trainRoute: TrainRouteLeg): Promise<number> {
@@ -251,68 +259,82 @@ export class ItineraryController {
 		let count = 0;
 		for (const leg of itinery.legs) {
 			if (leg instanceof TrainRouteLeg) {
-				platformDensity += await this.getRoutePlatformDensity(leg);
-				count++;
+				try {
+					platformDensity += await this.getRoutePlatformDensity(leg);
+					count++;
+				} catch (e) {
+					console.error(e);
+				}
 			}
 		}
 		if (count === 0) itinery.platformDensity = 0; // no TrainRoute, so technically dont count density
 		itinery.platformDensity = platformDensity / count; // average platform density
 	}
 
-	public async getTrafficIncidents(itinerary: BaseItinerary): Promise<void> {
-		const incidents = await this.api.fetchTrafficIncident();
-		const seen = new Set<string>();
-		for (const route of itinerary.legs) {
-			if (route instanceof DrivingRouteLeg) {
-				for (let i = 0; i < route.geometry.length-1; i++) {
-					for (const incident of incidents) {
-						if (seen.has(`${incident.latitude}, ${incident.longitude}`))
-							continue; // ensure not add an incident twice
-						const distance = calDistancePointLine(
-							incident.latitude, 
-							incident.longitude,
-							route.geometry[i].lat,
-							route.geometry[i].lng,
-							route.geometry[i+1].lat,
-							route.geometry[i+1].lng
-						);
-						if (distance <= 50e-3) {
-							seen.add(`${incident.latitude}, ${incident.longitude}`); 
-							itinerary.incidents.push(incident);
-						}
+	public async getTrafficIncidents(itinerary: DrivingItinerary): Promise<void> {
+		try {
+			const incidents = await this.api.fetchTrafficIncident();
+			const seen = new Set<string>();
+			const coords = itinerary.polylineCoords;
+			for (let i = 0; i < coords.length - 1; i++) {
+				for (const incident of incidents) {
+					if (seen.has(`${incident.Latitude}, ${incident.Longitude}`))
+						continue;
+					const distance = calDistancePointLine(
+						incident.Latitude, 
+						incident.Longitude,
+						coords[i][0],
+						coords[i][1],
+						coords[i+1][0],
+						coords[i+1][1]
+					);
+					if (distance < 50e-3) {
+						seen.add(`${incident.Latitude}, ${incident.Longitude}`); 
+						itinerary.incidents.push(incident);
 					}
 				}
 			}
+		} catch (e) {
+			console.error(e);
+			throw new Error('Fail to get traffic incidents data');
 		}
 	}
 
 	public async getWeatherData(itinerary: BaseItinerary): Promise<void> {
 		// get data of the weather station that is closest to the midpoint of the itinerary
-		const [metadata, forecast] = await this.api.fetchWeatherData();
-		const start = itinerary.legs[0].start;
-		const end = itinerary.legs[itinerary.legs.length-1].end;
-		if (!start || !end)
-			throw new Error('Invalid itinerary');
-		const midpoint = {
-			lat: (start.lat + end.lat) / 2,
-			lon: (start.lon + end.lon) / 2
-		}; // approximate for small distances (work ok for singapore)
-		const distances = metadata.map(d => ({
-			name: d.name, 
-			distance: calCrow(d.label_location.latitude, d.label_location.longitude, midpoint.lat, midpoint.lon),
-		}));
-		let minDistance = Infinity;
-		let closestStation = '';
-		for (const d of distances) {
-			if (d.distance < minDistance) {
-				minDistance = d.distance;
-				closestStation = d.name;
+		try {
+			const [metadata, forecast] = await this.api.fetchWeatherData();
+			const firstLeg = itinerary.legs[0];
+			const lastLeg = itinerary.legs[itinerary.legs.length-1];
+			const start = firstLeg.geometry[0];
+			const end = lastLeg.geometry[lastLeg.geometry.length-1];
+			const midpoint = {
+				lat: (start.lat + end.lat) / 2,
+				lon: (start.lng + end.lng) / 2
+			}; // approximate for small distances (work ok for singapore)
+			const distances = metadata.map(d => ({
+				name: d.name, 
+				distance: calCrow(d.label_location.latitude, d.label_location.longitude, midpoint.lat, midpoint.lon),
+			}));
+			let minDistance = Infinity;
+			let closestStation = '';
+			for (const d of distances) {
+				if (d.distance < minDistance) {
+					minDistance = d.distance;
+					closestStation = d.name;
+				}
 			}
+			if (!Number.isFinite(minDistance)) console.error('No weather station');
+			let weatherData = forecast.find(f => f.area === closestStation)?.forecast;
+			if (!weatherData) {
+				weatherData = ''; 
+				console.error('No forecast for this weather station');
+			}
+			itinerary.weather = weatherData;
+		} catch (e) {
+			console.log(e);
+			throw new Error('Fail to get weather data');
 		}
-		if (!Number.isFinite(minDistance)) throw new Error('No weather station');
-		const weatherData = forecast.find(f => f.area === closestStation)?.forecast;
-		if (!weatherData) throw new Error('No forecast for this weather station');
-		itinerary.weather = weatherData;
 	}
 
 	public async getBusWaitTime(itinerary: PublicItinerary) {
@@ -320,34 +342,35 @@ export class ItineraryController {
 		for (const route of itinerary.legs) {
 			if (!(route instanceof BusRouteLeg))
 				continue;
-			const busData = await this.api.fetchBusArrivalTime(route.busStopCode, route.routeName);
-			let waitTime = 0, count = 0;
-			if (busData.length <= 1)
-				continue; // bus may not in operations
-			for (let i = 0; i < busData.length-1; i++) {
-				const date1 = new Date(busData[i].EstimatedArrival);
-				const date2 = new Date(busData[i+1].EstimatedArrival);
-				waitTime += (date2.getTime() - date1.getTime()) / (1000 * 60);
-				count++;
+			try {
+				const busData = await this.api.fetchBusArrivalTime(route.busStopCode, route.routeName);
+				let waitTime = 0, count = 0;
+				if (busData.length <= 1)
+					continue; // bus may not in operations
+				for (let i = 0; i < busData.length-1; i++) {
+					const date1 = new Date(busData[i].EstimatedArrival);
+					const date2 = new Date(busData[i+1].EstimatedArrival);
+					if (isNaN(date1.getTime()) || isNaN(date2.getTime())) continue;
+					waitTime += (date2.getTime() - date1.getTime()) / (1000 * 60);
+					count++;
+				}
+				if (count === 0) {
+					return;
+				}
+				totalWaitTime += waitTime / count;
+			} catch (e) {
+				console.error(e);
+				continue;
 			}
-			if (count === 0) {
-				return;
-			}
-			totalWaitTime += waitTime / count;
 		}
 		itinerary.busWaitTime = totalWaitTime;
 	}
 
 	public rankItineraries(itineraries: BaseItinerary[], userPreference: ConvenienceScoreFilterPreference) {
 		const itineraryScore: ItineraryScore<BaseItinerary>[] = [];
+		const bound = new Bound(itineraries);
 		for (const itinerary of itineraries) {
-			if (
-				!(itinerary instanceof SimpleWalkingItinerary) &&
-				!(itinerary instanceof DrivingItinerary) &&
-				!(itinerary instanceof PublicItinerary)
-			) 
-				throw new Error('Unknow itinery type');
-			itinerary.convenienceScore.computeScore(itineraries, userPreference);
+			itinerary.convenienceScore.computeScore(bound, userPreference);
 			const score = itinerary.convenienceScore.getScore();
 			itineraryScore.push({
 				itinerary: itinerary,

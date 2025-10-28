@@ -554,7 +554,9 @@ export function AppSidebarSearch({ options, loading, debouncedFetch, setOptions,
                       body: JSON.stringify(body),
                     });
 
-                    if (!res.ok) throw new Error(`Server error ${res.status}`);
+                    if (!res.ok) {
+                      throw new Error(`Server error ${res.status}`);
+                    }
                     const data = await res.json();
                     console.log("Received itineraries:", data);
 

@@ -123,6 +123,12 @@ export async function POST(request: NextRequest) {
     const api = new ExternalApiHandler();
     const controller = new ItineraryController(api);
     const nearestCarpark = await controller.getNearestCarpark(end[0], end[1]);
+    if (!nearestCarpark) {
+      return NextResponse.json({
+        error: 404,
+        message: 'No carpark data found'
+      });
+    }
 
     const drivingItineraries: BaseItinerary[] = []
     for ( const {carpark, distance} of nearestCarpark) {

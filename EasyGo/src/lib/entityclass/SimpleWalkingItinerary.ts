@@ -1,17 +1,20 @@
 import { BaseItinerary } from "./BaseItinerary"
 import { RouteLeg } from "./RouteLeg"
 import { decodePolyline } from "../controllers/leaflethelper-controller"
-import { ConvenienceScore, ConvenienceScoreFactory } from "./ConvenienceScore"
 
 export class SimpleWalkingItinerary extends BaseItinerary {
   fullGeometryString?: string
   polylineCoords: [number, number][]
-  convenienceScore: ConvenienceScore<SimpleWalkingItinerary>
+  summary: string;
 
   constructor(legs: RouteLeg[], fullGeometry?: string, userMode: string = "walk") {
     super(legs, userMode)
     this.fullGeometryString = fullGeometry
-    this.convenienceScore = ConvenienceScoreFactory.create<SimpleWalkingItinerary>(this);
+    this.summary = `
+      Duration: ${(this.totalDuration / 60).toFixed(0)} mins<br>
+      Distance: ${(this.totalDistance / 1000).toFixed(2)} km<br>
+      Mode: ${this.userMode}
+    `
 
     if (fullGeometry) {
       const decoded = decodePolyline(fullGeometry) || []
@@ -23,11 +26,7 @@ export class SimpleWalkingItinerary extends BaseItinerary {
     }
   }
 
-  get summary(): string {
-    return `
-      Duration: ${(this.totalDuration / 60).toFixed(0)} mins<br>
-      Distance: ${(this.totalDistance / 1000).toFixed(2)} km<br>
-      Mode: ${this.userMode}
-    `
+  public get mode() {
+    return 'SimpleWalkingItinerary';
   }
 }
