@@ -39,7 +39,7 @@ export class Bound { // a class store max and min of data for the convenience sc
 
     public constructor(itineraries: BaseItinerary[]) {
         this.duration = getMaxMin<BaseItinerary>(itineraries, i => i.totalDuration);
-        this.walkingDistance = getMaxMin<BaseItinerary>(itineraries, i => i.getWalkingDistance());
+        this.walkingDistance = getMaxMin<BaseItinerary>(itineraries, i => i.walkingDistance);
         const publicItineraries = itineraries.filter(i => isPublicItinerary(i));
         const drivingItineraries = itineraries.filter(i => isDrivingItinerary(i));
         this.noTransfer = getMaxMin<PublicItinerary>(publicItineraries, i => i.totalTransfers);
@@ -144,7 +144,6 @@ export class ConvenienceScoreFactory {
             return new ConvenienceScore(itinerary, new PublicScoring());
         if (isDrivingItinerary(itinerary))
             return new ConvenienceScore(itinerary, new DrivingScoring());
-        console.log(itinerary.mode);
         throw new Error('Invalid itinerary type');
     }
 }
@@ -163,7 +162,7 @@ export class ConvenienceScore {
 
     public computeScore(bound: Bound, userPreference: ConvenienceScoreFilterPreference): void {
         const normalizedDurationScore = normalize(this.itinerary.totalDuration, bound.duration);
-        const normalizedWalkingDistanceScore = normalize(this.itinerary.getWalkingDistance(), bound.duration);
+        const normalizedWalkingDistanceScore = normalize(this.itinerary.walkingDistance, bound.walkingDistance);
         this.score = userPreference.durationWeight * (1 - normalizedDurationScore)
         + userPreference.walkingDistanceWeight * (1 - normalizedWalkingDistanceScore);
         this.score = this.strategy.calculate(this.score, this.itinerary, userPreference, bound);

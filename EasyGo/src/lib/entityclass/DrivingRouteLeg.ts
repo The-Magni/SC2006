@@ -8,9 +8,8 @@ export class DrivingRouteLeg extends RouteLeg {
   distanceText: string
   direction: string
 
-  constructor(data: RouteInstruction) {
-    super("DRIVE")
-    console.log("i am in the consttructor now", data)
+  constructor(data: any, fullGeometry?: string) {
+    super({ mode: "DRIVE" })
 
     this.instruction = data[0] ?? ""
     this.roadName = data[1] ?? "Unnamed Road"

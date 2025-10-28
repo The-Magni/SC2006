@@ -21,7 +21,6 @@ export class DrivingItinerary extends BaseItinerary {
       Distance: ${(this.totalDistance / 1000).toFixed(2)} km<br>
       ${this.legs.map(l => l.getDescription()).join("<br>")}
     `
-    console.log("i am the full gemotry string from constructor", fgs)
 
     if (fgs) {
       const decoded = decodePolyline(fgs)
@@ -32,7 +31,14 @@ export class DrivingItinerary extends BaseItinerary {
         l.geometry ? l.geometry.map(p => [p.lat, p.lng] as [number, number]) : []
       )
     }
-    console.log(this.polylineCoords)
+  }
+
+  public updateSummary() { // for when adding the walking itinerary to it
+    this.summary = `
+      Duration: ${(this.totalDuration / 60).toFixed(0)} mins<br>
+      Distance: ${(this.totalDistance / 1000).toFixed(2)} km<br>
+      ${this.legs.map(l => l.getDescription()).join("<br>")}
+    `;
   }
 
   public get mode(): string {
