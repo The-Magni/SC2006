@@ -1,20 +1,24 @@
+import {Leg} from "@/lib/onemap/deserializedClasses/dzPtRoutes";
+
 export type LatLng = { lat: number; lng: number }
 import { decodePolyline } from "../controllers/leaflethelper-controller"
 
 export class RouteLeg {
-  mode: string
-  distance: number
-  duration: number
+  mode: string = ""
+  distance: number = 0
+  duration: number = 0
   start?: { name: string; lat: number; lon: number }
   end?: { name: string; lat: number; lon: number }
   geometry: LatLng[] = []
   description = ""
 
-  constructor(data: any) {
-    this.mode = data.mode ?? "UNKNOWN"
-    this.distance = data.distance ?? 0
-    this.duration = data.duration ?? 0
+  constructor(mode : string, data?: Leg, ) {
+    //this.mode = data.mode ?? "UNKNOWN"
+      if (!data) return
 
+      this.distance = data.distance ?? 0
+    this.duration = data.duration ?? 0
+    this.mode = mode ?? "UNKNOWN"
     if (data.from) {
       this.start = {
         name: data.from.name ?? "Unknown",

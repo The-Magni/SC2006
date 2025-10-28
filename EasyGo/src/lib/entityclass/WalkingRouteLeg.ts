@@ -1,9 +1,10 @@
 import { RouteLeg } from "./RouteLeg"
 import { decodePolyline } from "../controllers/leaflethelper-controller"
+import {WalkLeg} from "@/lib/onemap/deserializedClasses/dzPtRoutes";
 
 export class WalkingRouteLeg extends RouteLeg {
-  constructor(data: any) {
-    super(data)
+  constructor(data: WalkLeg) {
+    super("WALK")
 
     this.mode = "WALK"
     this.distance = data.distance ?? 0

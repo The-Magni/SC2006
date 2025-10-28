@@ -11,7 +11,7 @@ export class SimpleWalkingRouteLeg extends RouteLeg {
     from?: [number, number]
     to?: [number, number]
   }) {
-    super({ mode: data.mode })
+    super("WALK")
     this.distance = data.distance ?? 0
     this.duration = data.duration ?? 0
     this.from = data.from

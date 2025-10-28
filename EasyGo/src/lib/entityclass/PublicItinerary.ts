@@ -29,7 +29,7 @@ export class PublicItinerary extends BaseItinerary {
       ${details}
     `
   }
-
+/*
   static fromPT(data: any): PublicItinerary[] {
     const itineraries = data.plan?.itineraries || []
 
@@ -49,5 +49,5 @@ export class PublicItinerary extends BaseItinerary {
       itinerary.totalFare = parseFloat(iti.fare ?? "0")
       return itinerary
     })
-  }
+  }*/
 }

@@ -1,13 +1,14 @@
 import { RouteLeg } from "./RouteLeg"
 import { TrainStation } from "./TrainStation"
+import { TransitLeg } from "@/lib/onemap/deserializedClasses/dzPtRoutes";
 
 export class TrainRouteLeg extends RouteLeg {
   routeName: string
   fromStation?: TrainStation
   toStation?: TrainStation
 
-  constructor(data: any) {
-    super(data)
+  constructor(data: TransitLeg) {
+    super("SUBWAY",data)
     this.routeName = data.route ?? "Train Line"
 
     const fromName = this.start?.name ?? "Unknown"

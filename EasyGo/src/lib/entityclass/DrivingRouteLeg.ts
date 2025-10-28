@@ -1,15 +1,15 @@
 import { RouteLeg } from "./RouteLeg"
 import { decodePolyline } from "../controllers/leaflethelper-controller"
+import {RouteInstruction} from "@/lib/onemap/deserializedClasses/dzDrivingRoutes";
 
 export class DrivingRouteLeg extends RouteLeg {
   instruction: string
   roadName: string
   distanceText: string
   direction: string
-  geometryString: string
 
-  constructor(data: any, fullGeometry?: string) {
-    super({ mode: "DRIVE" })
+  constructor(data: RouteInstruction) {
+    super("DRIVE")
     console.log("i am in the consttructor now", data)
 
     this.instruction = data[0] ?? ""

@@ -14,6 +14,9 @@ import { ExternalApiHandler } from "../boundary/ExternalApiHandler"
 import { calCrow, getStopNumber, calDistancePointLine } from "../utils"
 import { CarparkData } from "../boundary/ExternalApiHandler"
 import { ConvenienceScoreFilterPreference } from "../entityclass/ConvenienceScoreFilterPreference"
+import { OneMapPTResponse } from "@/lib/onemap/deserializedClasses/dzPtRoutes"
+import { OneMapDrivingRouteResponse } from "@/lib/onemap/deserializedClasses/dzDrivingRoutes"
+import { OneMapWalkingRouteResponse } from "@/lib/onemap/deserializedClasses/dzWalkRoutes"
 
 export type ItineraryScore<T extends BaseItinerary> = {
 	itinerary: T;
@@ -29,6 +32,7 @@ export function parseCoords(coordStr: string): { lat: number; lng: number } | nu
 	return { lat, lng }
 }
 
+export type OneMapAnyResponse = OneMapPTResponse | OneMapDrivingRouteResponse;
 
 export class ItineraryController {
 
@@ -38,20 +42,20 @@ export class ItineraryController {
         this.api = api;
     }	
 
-	static parseResponse(json: any, mode: "pt" | "drive" | "walk" | "cycle" = "pt"): BaseItinerary[] {
+	static parseResponse(json: OneMapAnyResponse, mode: "pt" | "drive" | "walk" | "cycle" = "pt"): BaseItinerary[] {
 		if (!json) throw new Error("Empty OneMap response")
 
-		if (mode === "pt" && json.plan) {
+		if (mode === "pt" && "plan" in json && json.plan) {
 		return this.parsePublicTransport(json)
-		} else if (["drive", "walk", "cycle"].includes(mode) && json.route_instructions) {
-		return this.parseSimpleRoute(json, mode)
+		} else if (["drive", "walk", "cycle"].includes(mode)) {
+		return this.parseSimpleRoute(json as OneMapDrivingRouteResponse, mode)
 		} else {
 		console.warn("Unknown OneMap format or missing data:", json)
 		return []
 		}
 	}
 
-	static parsePublicTransport(json: any): PublicItinerary[] {
+	static parsePublicTransport(json: OneMapPTResponse): PublicItinerary[] {
 		const itinerariesRaw = json.plan?.itineraries ?? []
 		const itineraries: PublicItinerary[] = []
 
@@ -80,10 +84,10 @@ export class ItineraryController {
 	}
 
 
-    static parseSimpleRoute(json: any, mode: "drive" | "walk" | "cycle"): BaseItinerary[] {
+    static parseSimpleRoute(json: OneMapDrivingRouteResponse, mode: "pt" | "drive" | "walk" | "cycle"): BaseItinerary[] {
     const itineraries: BaseItinerary[] = []
 
-		function buildDrivingItinerary(routeBlock: any, label?: string): DrivingItinerary {
+		function buildDrivingItinerary(routeBlock: OneMapDrivingRouteResponse): DrivingItinerary {
 		const summary = routeBlock.route_summary ?? {}
 		const fullGeometry = routeBlock.route_geometry ?? ""
 		const routeInstructions = routeBlock.route_instructions ?? []
@@ -118,7 +122,7 @@ export class ItineraryController {
     if (mode === "drive") {
       // Primary (fastest) route
       if (json.route_instructions) {
-        itineraries.push(buildDrivingItinerary(json, "fastest"))
+        itineraries.push(buildDrivingItinerary(json))
       }
 
     //   // Secondary (shortest) route
@@ -146,8 +150,8 @@ export class ItineraryController {
         distance: summary.total_distance ?? 0,
         duration: summary.total_time ?? 0,
         geometry: fullGeometry,
-        from: parseCoords(json.start ?? ""),
-        to: parseCoords(json.end ?? ""),
+        from: parseCoords(json.route_instructions[0][3]), // this might not be right lmao
+        to: parseCoords(json.route_instructions[json.route_instructions.length - 1][3]),
       })
       const iti = new SimpleWalkingItinerary([leg], fullGeometry, mode)
       iti.totalDuration = summary.total_time ?? 0

@@ -1,11 +1,12 @@
 import { RouteLeg } from "./RouteLeg"
+import { TransitLeg} from "@/lib/onemap/deserializedClasses/dzPtRoutes";
 
 export class BusRouteLeg extends RouteLeg {
   routeName: string
   busStopCode: string
 
-  constructor(data: any) {
-    super(data)
+  constructor(data: TransitLeg) {
+    super("BUS")
     this.routeName = data.route ?? "Unknown Bus"
     this.busStopCode = data.from?.stopCode ?? ""
     console.log(this.busStopCode)
