@@ -44,8 +44,6 @@ export async function GET(request: NextRequest) {
         drivingItinerary.polylineCoords = drivingItinerary.polylineCoords.concat(walkingItinerary.polylineCoords);
         drivingItinerary.totalDuration += walkingItinerary.totalDuration;
         drivingItinerary.totalDistance += walkingItinerary.totalDistance;
-        drivingItinerary.updateSummary();
-        drivingItinerary.summary += walkingItinerary.summary;
         drivingItinerary.nearestCarpark = new Carpark({
             id: carpark.CarParkID,
             name: carpark.Development,

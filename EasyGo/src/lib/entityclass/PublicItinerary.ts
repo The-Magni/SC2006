@@ -1,31 +1,39 @@
 import { BaseItinerary } from "./BaseItinerary"
-import { BusRouteLeg } from "./BusRouteLeg"
-import { TrainRouteLeg } from "./TrainRouteLeg"
-import { WalkingRouteLeg } from "./WalkingRouteLeg"
 import { RouteLeg } from "./RouteLeg"
 
 export class PublicItinerary extends BaseItinerary {
   userMode?: string
   busWaitTime: number;
   platformDensity: number;
-  summary: string;
+  // summary: string;
  
   constructor(legs: RouteLeg[]) {
     super(legs, "pt")
     this.userMode = "pt"
     this.busWaitTime = 0; // init so that typescript doesnt complain
     this.platformDensity = 0; // same thing
+    // const details = this.legs.map((l) => l.getDescription()).join("<br>")
+    // this.summary = `
+    //   Public Transport<br>
+    //   Duration: ${(this.totalDuration / 60).toFixed(0)} mins<br>
+    //   Distance: ${(this.totalDistance / 1000).toFixed(2)} km<br>
+    //   Transfers: ${this.totalTransfers}<br><br>
+    //   ${details}
+    // `
+  }
+  public get mode() {
+    return 'PublicItinerary';
+  }
+
+  public get summary() {
     const details = this.legs.map((l) => l.getDescription()).join("<br>")
-    this.summary = `
+    return `
       Public Transport<br>
       Duration: ${(this.totalDuration / 60).toFixed(0)} mins<br>
       Distance: ${(this.totalDistance / 1000).toFixed(2)} km<br>
       Transfers: ${this.totalTransfers}<br><br>
       ${details}
     `
-  }
-  public get mode() {
-    return 'PublicItinerary';
   }
 /*
 

@@ -72,7 +72,7 @@ export default function Test() {
         getItineraries([1.397055, 103.747498], [1.2654, 103.8203])
         .then(getScore)
         .then(data => {
-            data.best.forEach(i => {
+            data.public.forEach(i => {
                 console.log(i.itinerary.data.summary);
                 console.log(i.score);
             })

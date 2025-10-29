@@ -9,18 +9,13 @@ export class DrivingItinerary extends BaseItinerary {
   polylineCoords: [number, number][]
   viaRoute?: string
   userMode = "drive"
-  summary: string;
+  // summary: string;
 
   constructor(legs: RouteLeg[], fgs?: string, nearestCarpark?: Carpark, viaRoute?: string) {
     super(legs, "drive")
     this.nearestCarpark = nearestCarpark
     this.fullGeometryString = fgs
     this.viaRoute = viaRoute
-    this.summary = `
-      Duration: ${(this.totalDuration / 60).toFixed(0)} mins<br>
-      Distance: ${(this.totalDistance / 1000).toFixed(2)} km<br>
-      ${this.legs.map(l => l.getDescription()).join("<br>")}
-    `
 
     if (fgs) {
       const decoded = decodePolyline(fgs)
@@ -33,8 +28,16 @@ export class DrivingItinerary extends BaseItinerary {
     }
   }
 
-  public updateSummary() { // for when adding the walking itinerary to it
-    this.summary = `
+  // public updateSummary() { // for when adding the walking itinerary to it
+  //   this.summary = `
+  //     Duration: ${(this.totalDuration / 60).toFixed(0)} mins<br>
+  //     Distance: ${(this.totalDistance / 1000).toFixed(2)} km<br>
+  //     ${this.legs.map(l => l.getDescription()).join("<br>")}
+  //   `;
+  // }
+
+  public get summary() {
+    return `
       Duration: ${(this.totalDuration / 60).toFixed(0)} mins<br>
       Distance: ${(this.totalDistance / 1000).toFixed(2)} km<br>
       ${this.legs.map(l => l.getDescription()).join("<br>")}

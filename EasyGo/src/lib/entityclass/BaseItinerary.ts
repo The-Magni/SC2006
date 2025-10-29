@@ -16,7 +16,7 @@ export abstract class BaseItinerary {
   incidents: Incident[];
   convenienceScore: ConvenienceScore;
   walkingDistance: number;
-  abstract summary: string;
+  // abstract summary: string;
 
   constructor(legs: RouteLeg[], userMode?: string) {
     this.legs = legs
@@ -35,6 +35,8 @@ export abstract class BaseItinerary {
 	}
 
   public abstract get mode(): string;
+
+  public abstract get summary(): string;
 
   getAllPolylines(): [number, number][][] {
     return this.legs

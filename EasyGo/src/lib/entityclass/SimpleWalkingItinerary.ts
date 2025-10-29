@@ -5,16 +5,16 @@ import { decodePolyline } from "../controllers/leaflethelper-controller"
 export class SimpleWalkingItinerary extends BaseItinerary {
   fullGeometryString?: string
   polylineCoords: [number, number][]
-  summary: string;
+  // summary: string;
 
   constructor(legs: RouteLeg[], fullGeometry?: string, userMode: string = "walk") {
     super(legs, userMode)
     this.fullGeometryString = fullGeometry
-    this.summary = `
-      Duration: ${(this.totalDuration / 60).toFixed(0)} mins<br>
-      Distance: ${(this.totalDistance / 1000).toFixed(2)} km<br>
-      Mode: ${this.userMode}
-    `
+    // this.summary = `
+    //   Duration: ${(this.totalDuration / 60).toFixed(0)} mins<br>
+    //   Distance: ${(this.totalDistance / 1000).toFixed(2)} km<br>
+    //   Mode: ${this.userMode}
+    // `
 
     if (fullGeometry) {
       const decoded = decodePolyline(fullGeometry) || []
@@ -28,5 +28,13 @@ export class SimpleWalkingItinerary extends BaseItinerary {
 
   public get mode() {
     return 'SimpleWalkingItinerary';
+  }
+
+  public get summary() {
+    return `
+      Duration: ${(this.totalDuration / 60).toFixed(0)} mins<br>
+      Distance: ${(this.totalDistance / 1000).toFixed(2)} km<br>
+      Mode: ${this.userMode}
+    `
   }
 }
