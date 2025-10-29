@@ -14,9 +14,9 @@ import { ExternalApiHandler } from "../boundary/ExternalApiHandler"
 import { calCrow, getStopNumber, calDistancePointLine } from "../utils"
 import { CarparkData } from "../boundary/ExternalApiHandler"
 import { ConvenienceScoreFilterPreference } from "../entityclass/ConvenienceScoreFilterPreference"
-import { OneMapPTResponse } from "@/lib/onemap/deserializedClasses/dzPtRoutes"
+import {OneMapPTResponse, TransitLeg, WalkLeg} from "@/lib/onemap/deserializedClasses/dzPtRoutes"
 import { OneMapDrivingRouteResponse } from "@/lib/onemap/deserializedClasses/dzDrivingRoutes"
-import { OneMapWalkingRouteResponse } from "@/lib/onemap/deserializedClasses/dzWalkRoutes"
+
 
 export type ItineraryScore<T extends BaseItinerary> = {
 	itinerary: T;
@@ -25,12 +25,13 @@ export type ItineraryScore<T extends BaseItinerary> = {
 
 
 
-export function parseCoords(coordStr: string): { lat: number; lng: number } | null {
-	if (!coordStr) return null
-	const [lat, lng] = coordStr.split(",").map(Number)
-	if (isNaN(lat) || isNaN(lng)) return null
-	return { lat, lng }
+function parseCoords(str: string): { lat: number; lon: number } {
+    const parts = str?.split(",") ?? ["0", "0"];
+    const lat = parseFloat(parts[0]) || 0;
+    const lon = parseFloat(parts[1]) || 0;
+    return { lat, lon };
 }
+
 
 export type OneMapAnyResponse = OneMapPTResponse | OneMapDrivingRouteResponse;
 
@@ -65,10 +66,10 @@ export class ItineraryController {
 
 		for (const leg of legsRaw) {
 			const mode = leg.mode?.toUpperCase() ?? ""
-			if (mode === "BUS") legs.push(new BusRouteLeg(leg))
-			else if (["RAIL", "SUBWAY", "TRAIN"].includes(mode)) legs.push(new TrainRouteLeg(leg))
-			else if (mode === "WALK") legs.push(new WalkingRouteLeg(leg))
-			else legs.push(new RouteLeg(leg))
+			if (mode === "BUS") legs.push(new BusRouteLeg(leg as TransitLeg))
+			else if (["RAIL", "SUBWAY", "TRAIN"].includes(mode)) legs.push(new TrainRouteLeg(leg as TransitLeg))
+			else if (mode === "WALK") legs.push(new WalkingRouteLeg(leg as WalkLeg))
+			//else legs.push(new RouteLeg(leg as Bus))
 		}
 
 		const iti = new PublicItinerary(legs)
@@ -145,14 +146,14 @@ export class ItineraryController {
     if (["walk", "cycle"].includes(mode)) {
       const summary = json.route_summary ?? {}
       const fullGeometry = json.route_geometry ?? ""
-      const leg = new WalkingRouteLeg({
-        mode,
-        distance: summary.total_distance ?? 0,
-        duration: summary.total_time ?? 0,
-        geometry: fullGeometry,
-        from: parseCoords(json.route_instructions[0][3]), // this might not be right lmao
-        to: parseCoords(json.route_instructions[json.route_instructions.length - 1][3]),
-      })
+        const leg = new WalkingRouteLeg({
+            mode,
+            distance: summary.total_distance ?? 0,
+            duration: summary.total_time ?? 0,
+            from: parseCoords(json.route_instructions[0][3]),
+            to: parseCoords(json.route_instructions[json.route_instructions.length -1][3]),
+        } as WalkLeg);
+
       const iti = new SimpleWalkingItinerary([leg], fullGeometry, mode)
       iti.totalDuration = summary.total_time ?? 0
       iti.totalDistance = summary.total_distance ?? 0

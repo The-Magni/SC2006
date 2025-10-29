@@ -9,7 +9,7 @@ export class WalkingRouteLeg extends RouteLeg {
     this.mode = "WALK"
     this.distance = data.distance ?? 0
     this.duration = data.duration ?? 0
-
+      //this.geometry = data.geometry ?? []
     // Decode its specific segment geometry for Leaflet display
     if (data.legGeometry?.points) {
       this.geometry = decodePolyline(data.legGeometry.points)
