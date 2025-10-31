@@ -5,15 +5,26 @@ import { RefObject, useState, useEffect } from "react";
 import { Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarRail, useSidebar } from "@/components/ui/sidebar"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import { Card, CardAction, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider"
 import { NavUser } from "@/components/nav-user"
 import Autocomplete from "@mui/material/Autocomplete";
 import TextField from "@mui/material/TextField";
-import { Star, Car, Bus, Footprints, Circle, MapPinIcon, ListFilterIcon, Bookmark, LucideIcon } from "lucide-react";
+import { Star, Car, Bus, Footprints, Circle, MapPinIcon, ListFilterIcon, Bookmark, LucideIcon, Loader2 } from "lucide-react";
 import { OneMapSearchResult } from "@/lib/onemap/onemapAutoFill";
 import type { MapDisplayHandle } from "@/components/map-display";
-import { clearMapOverlays, drawItinerariesOnMap } from "@/lib/controllers/leaflethelper-controller"
+import { ConvenienceFilter, GetItinerariesResponse, useItineraryData } from "@/hooks/itinerary-data"
+import { useDebounce } from "use-debounce"
+
+//polyline drawing imports
+import { drawDrivingRoute } from "@/lib/controllers/leaflet/draw-driving-line";
+import { drawPublicRoute } from "@/lib/controllers/leaflet/draw-pt-line";
+import { drawWalkingRoute } from "@/lib/controllers/leaflet/draw-walking-line";
+import { BaseItineraryData, DrivingItineraryData, ItineraryData, PublicItineraryData, WalkingItineraryData } from "@/lib/controllers/Parser";
+import { drawItineraryLine } from "@/lib/controllers/leaflet/leaflethelper-controller";
+
+
 
 type SidebarSearchProps = {
   options: OneMapSearchResult[];
@@ -37,46 +48,6 @@ const data = {
     avatar: "/avatars/shadcn.jpg",
   }
 }
-
-// Sample routing data
-const routes = {
-  best: [
-    // --- Drive ---
-    { name: "via Seletar Expressway", distance: 32.9, time: 54, score: 7.8, type: "drive" },
-    { name: "via PIE & Clementi Rd", distance: 28.5, time: 45, score: 8.5, type: "drive" },
-    { name: "KJE/BKE Route", distance: 35.1, time: 50, score: 7.3, type: "drive" }, // New
-
-    // --- Public ---
-    { name: "MRT & Bus 190/961", distance: 35, time: 85, score: 6.2, type: "public" },
-    { name: "MRT via North-South Line", distance: 40, time: 70, score: 7.5, type: "public" },
-    { name: "Express Bus 151", distance: 30, time: 65, score: 6.8, type: "public" }, // New
-    { name: "LRT/MRT via Circle Line", distance: 42, time: 95, score: 5.9, type: "public" }, // New
-
-    // --- Walk ---
-    { name: "Direct Walk through Park", distance: 3.5, time: 60, score: 9.1, type: "walk" },
-    { name: "Walk via Main Street", distance: 4.2, time: 75, score: 8.0, type: "walk" },
-    { name: "Scenic River Walk", distance: 4.8, time: 80, score: 7.9, type: "walk" }, // New
-  ],
-  drive: [
-    { name: "via Seletar Expressway", distance: 32.9, time: 54, score: 7.8, type: "drive" },
-    { name: "via PIE & Clementi Rd", distance: 28.5, time: 45, score: 8.5, type: "drive" },
-    { name: "KJE/BKE Route", distance: 35.1, time: 50, score: 7.3, type: "drive" }, // New
-    { name: "Coastal Highway Route", distance: 30.5, time: 48, score: 8.2, type: "drive" }, // New
-  ],
-  public: [
-    { name: "MRT & Bus 190/961", distance: 35, time: 85, score: 6.2, type: "public" },
-    { name: "MRT via North-South Line", distance: 40, time: 70, score: 7.5, type: "public" },
-    { name: "Express Bus 151", distance: 30, time: 65, score: 6.8, type: "public" }, // New
-    { name: "LRT/MRT via Circle Line", distance: 42, time: 95, score: 5.9, type: "public" }, // New
-    { name: "Ferry + Bus Connection", distance: 25, time: 105, score: 5.1, type: "public" }, // New
-  ],
-  walk: [
-    { name: "Direct Walk through Park", distance: 3.5, time: 60, score: 9.1, type: "walk" },
-    { name: "Walk via Main Street", distance: 4.2, time: 75, score: 8.0, type: "walk" },
-    { name: "Scenic River Walk", distance: 4.8, time: 80, score: 7.9, type: "walk" }, // New
-    { name: "Shortest Sidewalk Path", distance: 3.2, time: 55, score: 8.8, type: "walk" }, // New
-  ]
-};
 
 const transportModes = [
   { id: "best", icon: Star, label: "Best" },
@@ -160,8 +131,7 @@ const RouteCard = ({ route }: { route: {
     distance: number;
     time: number;
     score: number;
-    type: string;
-    assignedCarpark: string
+    type: string
   };}) => {
   const RouteIcon = getRouteIcon(route.type);
 
@@ -181,13 +151,12 @@ const RouteCard = ({ route }: { route: {
           <p>Time: {route.time} min</p>
         </CardContent>
         <CardFooter>
-          <p>Convenience Score: {route.score.toFixed(2)}</p>
+          <p>Convenience Score: {route.score}</p>
         </CardFooter>
       </Card>
     </div>
   )
 };
-
 
 // Add routing data prop @John
 export function AppSidebarSearch({ options, loading, debouncedFetch, setOptions, setLayoutInURL, setStartValue, setEndValue, startValue, endValue, mapRef, ...props}: SidebarSearchProps & React.ComponentProps<typeof Sidebar>) {
@@ -195,18 +164,14 @@ export function AppSidebarSearch({ options, loading, debouncedFetch, setOptions,
   const [inputStartValue, setInputStartValue] = useState("");
   const [inputEndValue, setInputEndValue] = useState("");
   const [filterWeights, setFilterWeights] = useState<Record<string, number>>(initialFilterWeights);
+  const [debouncedFilters] = useDebounce(filterWeights, 800);
+  const [isRecalculating, setIsRecalculating] = useState(false);
+
   const {state} = useSidebar();
-  const [routeResults, setRouteResults] = useState<{
-    best: any[];
-    driving: any[];
-    public: any[];
-    walking: any[];
-  } | null>(null);
-
-
   const isCollapsed = state === "collapsed"
   // Temporary button state
   const [isToggled, setIsToggled] = useState(false);
+  const {routes: routeResults, loading: routeLoading, getItinerariesAndScore, getScore, setRoutes } = useItineraryData()
 
   // Handle filter value changes
   const handleFilterChange = (filterId: string, value: number[]) => {
@@ -223,35 +188,56 @@ export function AppSidebarSearch({ options, loading, debouncedFetch, setOptions,
     // route.score = filterWeights["time-taken"] * 2;
   })
   */
-  const handleDrawRoutes = async (mode: "best" | "drive" | "public" | "walk") => {
-    if (!mapRef?.current || !routeResults) return
-
-    const leaflet = await import("leaflet")
-    const map = mapRef.current.map;
-    // Get the correct set of itineraries
-    const itineraries =
-      mode === "best"
-        ? routeResults.best.map((r: any) => r.itinerary)
-        : mode === "drive"
-        ? routeResults.driving.map((r: any) => r.itinerary)
-        : mode === "public"
-        ? routeResults.public.map((r: any) => r.itinerary)
-        : routeResults.walking.map((r: any) => r.itinerary)
-
-    // Clear and draw
-    clearMapOverlays(map)
-    drawItinerariesOnMap(map, itineraries, leaflet, {
-      drive: "red",
-      public: ["#007AFF", "#34C759", "#AF52DE"],
-    })
-  }
-
+  const prevFilters = React.useRef<Record<string, number>>(filterWeights);
   useEffect(() => {
-    if (startValue && endValue) {
-      // Get routes and plot polyline here @John
-      console.log("Get Route");
+    if (!routeResults) return;
+    if (!startValue || !endValue) return;
+    if (JSON.stringify(prevFilters.current) === JSON.stringify(debouncedFilters)) {
+      return; // if no change, dont spam the api
     }
-  }, [isToggled]); // Dependencies: Only run when 'isToggled' change
+      prevFilters.current = debouncedFilters; 
+      const controller = new AbortController();
+      setIsRecalculating(true);
+
+      const filtersForBackend: ConvenienceFilter = {
+      durationWeight: debouncedFilters["time-taken"],
+      walkingDistanceWeight: debouncedFilters["amount-of-walking"],
+      noTransferWeight: debouncedFilters["number-of-transfers"],
+      carparkAvailabilityWeight: debouncedFilters["carpark-availability"],
+      busWaitTimeWeight: debouncedFilters["bus-wait-time"],
+      platformDensityWeight: debouncedFilters["crowd-level"],
+      fareWeight: debouncedFilters["fare-cost"],
+    };
+
+    const itinerariesPayload: GetItinerariesResponse = {
+      driving: routeResults.driving.map((r) => r.itinerary),
+      pt: routeResults.public.map((r) => r.itinerary),
+      walking: routeResults.walking.map((r) => r.itinerary),
+    };
+
+    (async () => {
+      try {
+        const newScores = await getScore(itinerariesPayload, filtersForBackend);
+        setRoutes(newScores);
+      } catch (err) {
+        console.error("Error updating scores:", err);
+      } finally {
+        setIsRecalculating(false);
+      }
+    }
+  )();
+      return () => controller.abort();
+
+  }, [debouncedFilters, routeResults, startValue, endValue, getScore, setRoutes]);
+  
+    // Handle route card click to draw polyline on map
+    const handleRouteClick = (itinerary: ItineraryData<BaseItineraryData>) => {
+  if (!mapRef?.current?.map) return;
+  const map = mapRef.current.map;
+  mapRef.current.clearPolylines();
+  drawItineraryLine(map, itinerary.mode, itinerary.data);
+  };
+
 
   return (
     <Sidebar
@@ -271,7 +257,6 @@ export function AppSidebarSearch({ options, loading, debouncedFetch, setOptions,
                       variant="ghost"
                       onClick={() => {
                         setSelectedMode(mode.id)
-                        handleDrawRoutes(mode.id) // 🚀 Draw polylines on click
                       }}
                       className="flex flex-col items-center gap-1 h-12"
                     >
@@ -509,126 +494,105 @@ export function AppSidebarSearch({ options, loading, debouncedFetch, setOptions,
             )}
 
             {/* Temporary Button */}
-            {!isCollapsed && (
-              <div className="px-2 pt-4">
-                <Button
-                  className="w-full cursor-pointer"
-                  variant="outline"
-                  onClick={async () => {
-                    if (!startValue || !endValue) {
-                      alert("Please select both start and end points first.");
-                      return;
-                    }
+            <div className="px-2 pt-4">
 
-                    const body = {
-                      start: [parseFloat(startValue.LATITUDE), parseFloat(startValue.LONGITUDE)],
-                      end: [parseFloat(endValue.LATITUDE), parseFloat(endValue.LONGITUDE)],
-                      filterData: {
-                        durationWeight: filterWeights["time-taken"],
-                        walkingDistanceWeight: filterWeights["amount-of-walking"],
-                        noTransferWeight: filterWeights["number-of-transfers"],
-                        carparkAvailabilityWeight: filterWeights["carpark-availability"],
-                        busWaitTimeWeight: filterWeights["bus-wait-time"],
-                        platformDensityWeight: filterWeights["crowd-level"],
-                        fareWeight: filterWeights["fare-cost"],
-                      },
-                    };
+              {/* where the search is actually triggered ===================================*/}
+              <Button
+                className="w-full cursor-pointer"
+                variant="outline"
+                disabled={routeLoading}
+                onClick={async () => {
+                  if (!startValue || !endValue) {
+                    alert("Please select both start and end points first.")
+                    return
+                  }
 
-                    try {
-                      const res = await fetch("/api/test-convenience", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify(body),
-                      });
+                  const filters = {
+                    durationWeight: filterWeights["time-taken"],
+                    walkingDistanceWeight: filterWeights["amount-of-walking"],
+                    noTransferWeight: filterWeights["number-of-transfers"],
+                    carparkAvailabilityWeight: filterWeights["carpark-availability"],
+                    busWaitTimeWeight: filterWeights["bus-wait-time"],
+                    platformDensityWeight: filterWeights["crowd-level"],
+                    fareWeight: filterWeights["fare-cost"],
+                  }
 
-                      if (!res.ok) throw new Error(`Server error ${res.status}`);
-                      const data = await res.json();
-                      console.log("Received itineraries:", data);
+                  try {
+                    const result = await getItinerariesAndScore(
+                      [parseFloat(startValue.LATITUDE), parseFloat(startValue.LONGITUDE)],
+                      [parseFloat(endValue.LATITUDE), parseFloat(endValue.LONGITUDE)],
+                      filters
+                    )
+                    console.log("Received itineraries:", result)
+                  } catch (err) {
+                    console.error("Error fetching routes:", err)
+                  }
+                }}
+              >
+                {routeLoading ? "Fetching Routes..." : "Get Routes"}
+              </Button>
+              {/* end of where the search is actually triggered ===================================*/}
 
-                      setRouteResults(data);
-                    } catch (err) {
-                      console.error("Error fetching routes:", err);
-                    }
-                  }}
-                >
-                  Get Routes
-                </Button>
-              </div>
-            )}
+
+              
+            </div>
           </SidebarGroupContent>
         </SidebarGroup>
+
+        {!isCollapsed && (
+          <Separator />
+        )}
 
         <SidebarGroup>
           <SidebarGroupLabel>Routes</SidebarGroupLabel>
 
           <SidebarGroupContent>
-            {!isCollapsed && (
-              <>
-                {routeResults ? (
-                  (
-                    selectedMode === "best"
-                      ? routeResults.best
-                      : selectedMode === "drive"
-                      ? routeResults.driving
-                      : selectedMode === "public"
-                      ? routeResults.public
-                      : routeResults.walking
-                  )
-                    .sort((a: any, b: any) =>
-                      selectedMode === "best" ? b.score - a.score : 0
-                    )
-                    // Limit to top 3 for best
-                    .slice(0, selectedMode === "best" ? 3 : undefined)
-                    .map((r: any, idx: number) => {
-                      const iti = r.itinerary;
-                      const score = r.score ?? 0;
 
-                      const mode =
-                        iti?.userMode === "drive"
-                          ? "Driving"
-                          : iti?.userMode === "pt"
-                          ? "Public Transport"
-                          : iti?.userMode === "walk"
-                          ? "Walking"
-                          : "Route";
 
-                      const title =
-                        mode === "Driving" && iti?.viaRoute
-                          ? `${mode} via ${iti.viaRoute}`
-                          : mode === "Public Transport"
-                          ? "Public Transport Route"
-                          : mode === "Walking"
-                          ? "Walking Route"
-                          : `Best Route (${iti?.userMode ?? "Mixed"})`;
+          {!isCollapsed && (
+            routeResults ? (
+              (
+                  selectedMode === "best"
+                  ? routeResults.best
+                  : selectedMode === "drive"
+                  ? routeResults.driving
+                  : selectedMode === "public"
+                  ? routeResults.public
+                  : routeResults.walking
+              )?.map((r, idx) => (
+                <div
+                  key={`${selectedMode}-${idx}`}
+                  onClick={() => handleRouteClick(r.itinerary)} //the clickable portion
+                >
+                  <RouteCard
+                    route={{
+                      name: r.itinerary.data.name,
+                      distance: (r.itinerary.data.totalDistance ?? 0) / 1000,
+                      time: Math.round((r.itinerary.data.totalDuration ?? 0) / 60),
+                      score: r.score ?? 0,
+                      type: r.itinerary.mode as "best" | "drive" | "public" | "walk",
+                    }}
+                    
+                  />
+                </div>
+              ))
+            ) : (routeLoading || isRecalculating) ? (
+              <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
+                <Loader2 className="h-6 w-6 animate-spin mb-2 text-blue-500" />
+                <p className="text-sm">
+                  {routeLoading ? "Fetching routes..." : "Recalculating scores..."}
+                </p>
+              </div>
+            ) : (
+              <p className="text-muted-foreground text-sm px-3 py-2">
+                No routes yet. Click “Get Routes” to fetch available options.
+              </p>
+            )
+          )}
 
-                      const keyId = `${selectedMode}-${mode}-${idx}-${iti?.viaRoute ?? iti?.summary ?? "none"}`;
 
-                      const distanceKm = (iti?.totalDistance ?? 0) / 1000;
-                      const durationMin = Math.round((iti?.totalDuration ?? 0) / 60);
 
-                      return (
-                        <RouteCard
-                          key={keyId}
-                          route={{
-                            name: title,
-                            distance: Number.isFinite(distanceKm)
-                              ? distanceKm.toFixed(1)
-                              : 0,
-                            time: durationMin,
-                            score,
-                            type: iti?.userMode ?? "best",
-                            assignedCarpark: "test"
-                          }}
-                        />
-                      );
-                    })
-                ) : (
-                  <p className="text-muted-foreground text-sm px-3 py-2">
-                    No routes yet. Click “Get Routes” to fetch available options.
-                  </p>
-                )}
-              </>
-            )}
+
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>

@@ -1,7 +1,7 @@
 import {Leg} from "@/lib/onemap/deserializedClasses/dzPtRoutes";
 
 export type LatLng = { lat: number; lng: number }
-import { decodePolyline } from "../controllers/leaflethelper-controller"
+import { decodePolyline } from "../controllers/leaflet/leaflethelper-controller"
 
 export class RouteLeg {
   mode: string = ""

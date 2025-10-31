@@ -7,7 +7,7 @@ import "leaflet/dist/leaflet.css"
 import {
   initLeafletMap,
   drawItinerariesOnMap,
-} from "@/lib/controllers/leaflethelper-controller"
+} from "@/lib/controllers/leaflet/leaflethelper-controller"
 
 const LeafletPromise = import("leaflet")
 
@@ -53,7 +53,7 @@ export default function Page() {
 
     const data = await response.json()
     console.log("Fetched itineraries:", data)
-
+    
     const leaflet = (await LeafletPromise).default
 
     drawItinerariesOnMap(
