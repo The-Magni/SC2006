@@ -5,14 +5,16 @@ import L from "leaflet"
 import "leaflet/dist/leaflet.css"
 
 export interface MapDisplayHandle {
-  map: L.Map                
+  map: L.Map
   panTo: (lat: number, lng: number, popupText?: string) => void
+  clearPolylines: () => void
 }
 
 const MapDisplay = forwardRef<MapDisplayHandle>((_, ref) => {
   const mapContainerRef = useRef<HTMLDivElement | null>(null)
   const mapRef = useRef<L.Map | null>(null)
   const markerRef = useRef<L.Marker | null>(null)
+  const polylineLayerRef = useRef<L.LayerGroup | null>(null)
 
   useEffect(() => {
     if (mapContainerRef.current && !mapRef.current) {
@@ -68,19 +70,32 @@ const MapDisplay = forwardRef<MapDisplayHandle>((_, ref) => {
     }
   }, [])
 
-  useImperativeHandle(ref, () => ({
-    map: mapRef.current as L.Map,
-    panTo(lat: number, lng: number, popupText?: string) {
-      if (!mapRef.current) return
 
-      if (markerRef.current) markerRef.current.remove()
 
-      const marker = L.marker([lat, lng]).addTo(mapRef.current)
-      if (popupText) marker.bindPopup(popupText).openPopup()
-      mapRef.current.setView([lat, lng], 18)
-      markerRef.current = marker
-    },
-  }))
+useImperativeHandle(ref, () => ({
+  map: mapRef.current as L.Map,
+
+  panTo(lat, lng, popupText) {
+    if (!mapRef.current) return;
+
+    if (markerRef.current) markerRef.current.remove();
+
+    const marker = L.marker([lat, lng]).addTo(mapRef.current);
+    if (popupText) marker.bindPopup(popupText).openPopup();
+    mapRef.current.setView([lat, lng], 18);
+    markerRef.current = marker;
+  },
+  clearPolylines() {
+    if (!mapRef.current) return;
+
+    mapRef.current.eachLayer((layer) => {
+      if (!(layer instanceof L.TileLayer)) {
+        mapRef.current!.removeLayer(layer);
+      }
+    });
+  },
+}));
+
 
   return <div ref={mapContainerRef} className="h-full w-full" />
 })

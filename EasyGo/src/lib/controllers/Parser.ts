@@ -18,6 +18,7 @@ export interface PublicItineraryData extends BaseItineraryData {
     totalFare: number;
     busWaitTime: number;
     platformDensity: number;
+    //name : string;
 }
 
 export interface DrivingItineraryData extends BaseItineraryData {
@@ -43,6 +44,7 @@ export interface BaseItineraryData {
     legs: LegData[];
     score: number;
     summary: string;
+    name: string;
 }
 
 export interface ItineraryData<T extends BaseItineraryData> {
@@ -84,7 +86,8 @@ export class Parser {
                 totalFare: itinerary.totalFare || 0,
                 busWaitTime: itinerary.busWaitTime,
                 platformDensity: itinerary.platformDensity,
-                legs: itinerary.legs.map(Parser.serializeRouteLeg)
+                legs: itinerary.legs.map(Parser.serializeRouteLeg),
+                name: itinerary.name
             }
         }
     }
@@ -108,6 +111,8 @@ export class Parser {
                     availableLots: itinerary.nearestCarpark?.availableLots || 0
                 },
                 legs: itinerary.legs.map(Parser.serializeRouteLeg),
+                name: itinerary.name
+
             }
         }
     }
@@ -123,6 +128,7 @@ export class Parser {
                 summary: itinerary.summary,
                 score: itinerary.convenienceScore.getScore(),
                 legs: itinerary.legs.map(Parser.serializeRouteLeg),
+                name: itinerary.name
             }
         }
     } 
@@ -137,6 +143,7 @@ export class Parser {
                 score: itinerary.convenienceScore.getScore(),
                 summary: itinerary.summary,
                 legs: itinerary.legs.map(Parser.serializeRouteLeg),
+                name: itinerary.name || "",
             }
         }
     }
@@ -154,6 +161,7 @@ export class Parser {
         itinerary.platformDensity = data.data.platformDensity;
         itinerary.legs = data.data.legs.map(data => Parser.deserializeRouteLeg(data));
         itinerary.walkingDistance = data.data.walkingDistance;
+        itinerary.name = data.data.name;
         return itinerary;
     }
 
@@ -169,6 +177,8 @@ export class Parser {
         itinerary.nearestCarpark = new Carpark(data.data.nearestCarpark);
         itinerary.walkingDistance = data.data.walkingDistance;
         itinerary.legs = data.data.legs.map(Parser.deserializeRouteLeg);
+        itinerary.name = data.data.name;
+
         return itinerary;
     }
 
@@ -181,6 +191,8 @@ export class Parser {
         itinerary.convenienceScore.setScore(data.data.score);
         itinerary.polylineCoords = data.data.polyLineCoords;
         itinerary.walkingDistance = data.data.walkingDistance;
+        itinerary.name = data.data.name;
+
         itinerary.legs = data.data.legs.map(Parser.deserializeRouteLeg);
         return itinerary;
     }

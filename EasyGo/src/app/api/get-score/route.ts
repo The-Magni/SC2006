@@ -43,22 +43,31 @@ export async function POST(request: NextRequest) {
     );
     
     const [best, walkingIti, ptIti, drivingIti] = controller.rankItineraries(allItineraries, userPreference);
-    return NextResponse.json({
-        best: best.map(b => ({
-            score: b.score,
-            itinerary: Parser.serializeBaseItinenerary(b.itinerary),
-        })),
-        driving: drivingIti.map(d => ({
-            score: d.score,
-            itinerary: Parser.serializeDrivingItinerary(d.itinerary as DrivingItinerary)
-        })),
-        public: ptIti.map(p => ({
-            score: p.score,
-            itinerary: Parser.serializePublicItinerary(p.itinerary as PublicItinerary)
-        })),
-        walking: walkingIti.map(w => ({
-            score: w.score,
-            itinerary: Parser.serializeWalkingItinerary(w.itinerary as SimpleWalkingItinerary)
-        }))
-    });
+return NextResponse.json({
+    best: best.map(b => {
+        const it = b.itinerary;
+        if (it instanceof DrivingItinerary)
+        return { score: b.score, itinerary: Parser.serializeDrivingItinerary(it) };
+        if (it instanceof PublicItinerary)
+        return { score: b.score, itinerary: Parser.serializePublicItinerary(it) };
+        if (it instanceof SimpleWalkingItinerary)
+        return { score: b.score, itinerary: Parser.serializeWalkingItinerary(it) };
+        return { score: b.score, itinerary: Parser.serializeBaseItinenerary(it) };
+    }),
+    driving: drivingIti.map(d => ({
+        score: d.score,
+        itinerary: Parser.serializeDrivingItinerary(d.itinerary as DrivingItinerary),
+    })),
+    public: ptIti.map(p => ({
+        score: p.score,
+        itinerary: Parser.serializePublicItinerary(p.itinerary as PublicItinerary),
+    })),
+    walking: walkingIti.map(w => ({
+        score: w.score,
+        itinerary: Parser.serializeWalkingItinerary(
+        w.itinerary as SimpleWalkingItinerary
+        ),
+    })),
+});
+;
 }

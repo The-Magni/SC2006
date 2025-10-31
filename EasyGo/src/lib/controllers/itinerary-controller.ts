@@ -16,7 +16,7 @@ import { CarparkData } from "../boundary/ExternalApiHandler"
 import { ConvenienceScoreFilterPreference } from "../entityclass/ConvenienceScoreFilterPreference"
 import { OneMapPTResponse, TransitLeg, WalkLeg } from "@/lib/onemap/deserializedClasses/dzPtRoutes"
 import { OneMapDrivingRouteResponse } from "@/lib/onemap/deserializedClasses/dzDrivingRoutes"
-import { OneMapWalkingRouteResponse } from "@/lib/onemap/deserializedClasses/dzWalkRoutes"
+//import { OneMapWalkingRouteResponse } from "@/lib/onemap/deserializedClasses/dzWalkRoutes"
 import { Bound } from "../entityclass/ConvenienceScore"
 
 export type ItineraryScore<T extends BaseItinerary> = {
@@ -26,12 +26,13 @@ export type ItineraryScore<T extends BaseItinerary> = {
 
 
 
-export function parseCoords(coordStr: string): { lat: number; lng: number } | null {
-	if (!coordStr) return null
-	const [lat, lng] = coordStr.split(",").map(Number)
-	if (isNaN(lat) || isNaN(lng)) return null
-	return { lat, lng }
+function parseCoords(str: string): { lat: number; lon: number } {
+    const parts = str?.split(",") ?? ["0", "0"];
+    const lat = parseFloat(parts[0]) || 0;
+    const lon = parseFloat(parts[1]) || 0;
+    return { lat, lon };
 }
+
 
 export type OneMapAnyResponse = OneMapPTResponse | OneMapDrivingRouteResponse;
 
@@ -69,20 +70,30 @@ export class ItineraryController {
 			if (mode === "BUS") legs.push(new BusRouteLeg(leg as TransitLeg))
 			else if (["RAIL", "SUBWAY", "TRAIN"].includes(mode)) legs.push(new TrainRouteLeg(leg as TransitLeg))
 			else if (mode === "WALK") legs.push(new WalkingRouteLeg(leg as WalkLeg))
-			else legs.push(new RouteLeg('', leg))
+			//else legs.push(new RouteLeg(leg as Bus))
 		}
 
 		const iti = new PublicItinerary(legs)
 		iti.totalDuration = itinerary.duration ?? 0
-		iti.totalDistance = itinerary.walkDistance ?? 0
+		//iti.totalDistance = itinerary.walkDistance ?? 0
 		iti.totalTransfers = itinerary.transfers ?? 0
 		iti.totalFare = parseFloat(itinerary.fare ?? "0")
 
-		itineraries.push(iti)
-		}
+		const modeSequence: string[] = legs.map((leg) => {
+		const m = leg.mode.toUpperCase()
+		if (m === "BUS" && "routeName" in leg && leg.routeName) return `Bus ${leg.routeName}`
+		if (["RAIL", "SUBWAY", "TRAIN"].includes(m) && "routeName" in leg && leg.routeName)
+			return leg.routeName
+		if (m === "WALK") return "Walk"
+		return m
+		}).filter((v): v is string => Boolean(v))
 
-		return itineraries
-	}
+		iti.name = modeSequence.join(" → ")
+			itineraries.push(iti)
+			}
+
+			return itineraries
+		}
 
 
     static parseSimpleRoute(json: OneMapDrivingRouteResponse, mode: "pt" | "drive" | "walk" | "cycle"): BaseItinerary[] {
@@ -113,7 +124,7 @@ export class ItineraryController {
       iti.totalDistance = summary.total_distance ?? 0
       iti.totalTransfers = 0
       iti.totalFare = 0
-
+		iti.name = "Driving Route " + (routeBlock.viaRoute || "Via Unknown");
       return iti
     }
 
@@ -146,19 +157,20 @@ export class ItineraryController {
     if (["walk", "cycle"].includes(mode)) {
       const summary = json.route_summary ?? {}
       const fullGeometry = json.route_geometry ?? ""
-      const leg = new WalkingRouteLeg({
-        mode,
-        distance: summary.total_distance ?? 0,
-        duration: summary.total_time ?? 0,
-        geometry: fullGeometry,
-        from: parseCoords(json.route_instructions[0][3]), // this might not be right lmao
-        to: parseCoords(json.route_instructions[json.route_instructions.length - 1][3]),
-      })
+        const leg = new WalkingRouteLeg({
+            mode,
+            distance: summary.total_distance ?? 0,
+            duration: summary.total_time ?? 0,
+            from: parseCoords(json.route_instructions[0][3]),
+            to: parseCoords(json.route_instructions[json.route_instructions.length -1][3]),
+        } as WalkLeg);
+
       const iti = new SimpleWalkingItinerary([leg], fullGeometry, mode)
       iti.totalDuration = summary.total_time ?? 0
       iti.totalDistance = summary.total_distance ?? 0
       iti.totalTransfers = 0
       iti.totalFare = 0
+	  iti.name = "Walking Route";
       itineraries.push(iti)
     }
 

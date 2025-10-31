@@ -1,5 +1,5 @@
 import { RouteLeg } from "./RouteLeg"
-import { decodePolyline } from "../controllers/leaflethelper-controller"
+import { decodePolyline } from "../controllers/leaflet/leaflethelper-controller"
 import {RouteInstruction} from "@/lib/onemap/deserializedClasses/dzDrivingRoutes";
 
 export class DrivingRouteLeg extends RouteLeg {

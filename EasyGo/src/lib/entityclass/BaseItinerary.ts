@@ -16,6 +16,7 @@ export abstract class BaseItinerary {
   incidents: Incident[];
   convenienceScore: ConvenienceScore;
   walkingDistance: number;
+  name: string = "Route";
   // abstract summary: string;
 
   constructor(legs: RouteLeg[], userMode?: string) {
@@ -32,6 +33,7 @@ export abstract class BaseItinerary {
       if (leg instanceof WalkingRouteLeg || leg instanceof SimpleWalkingRouteLeg)
         this.walkingDistance += leg.distance;
     }
+    
 	}
 
   public abstract get mode(): string;

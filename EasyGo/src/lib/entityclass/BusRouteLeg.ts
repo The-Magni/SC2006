@@ -6,7 +6,7 @@ export class BusRouteLeg extends RouteLeg {
   busStopCode: string
 
   constructor(data: TransitLeg) {
-    super("BUS")
+    super("BUS", data)
     this.routeName = data.route ?? "Unknown Bus"
     this.busStopCode = data.from?.stopCode ?? ""
     const from = this.start?.name ?? "Unknown"
