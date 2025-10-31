@@ -1,7 +1,7 @@
 import { BaseItinerary } from "./BaseItinerary"
 import { RouteLeg } from "./RouteLeg"
 import { Carpark } from "./Carpark"
-import { decodePolyline } from "../controllers/leaflethelper-controller"
+import { decodePolyline } from "../controllers/leaflet/leaflethelper-controller"
 
 export class DrivingItinerary extends BaseItinerary {
   nearestCarpark?: Carpark
@@ -16,7 +16,7 @@ export class DrivingItinerary extends BaseItinerary {
     this.nearestCarpark = nearestCarpark
     this.fullGeometryString = fgs
     this.viaRoute = viaRoute
-
+    this.name = "Driving Route " + viaRoute;
     if (fgs) {
       const decoded = decodePolyline(fgs)
       this.polylineCoords = decoded.map(p => [p.lat, p.lng]) as [number, number][]

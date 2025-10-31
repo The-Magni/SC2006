@@ -73,6 +73,7 @@ export default function Test() {
         .then(getScore)
         .then(data => {
             data.public.forEach(i => {
+                console.log(i.itinerary)
                 console.log(i.itinerary.data.summary);
                 console.log(i.score);
             })

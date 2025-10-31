@@ -20,9 +20,13 @@ export async function GET() {
         5, 1, 5, 5, 5, 5, 5
     );
     const [best, walk, publicIti, drive] = controller.rankItineraries(itineraries, userPreference);
+
+    console.log(itineraries);
+    
     publicIti.forEach(i => {
         console.log(i.itinerary.summary);
         console.log(i.score);
+        console.log(i.itinerary);
     });
     return NextResponse.json({
         code: 200,

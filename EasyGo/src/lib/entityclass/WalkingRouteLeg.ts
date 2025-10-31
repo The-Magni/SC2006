@@ -1,5 +1,5 @@
 import { RouteLeg } from "./RouteLeg"
-import { decodePolyline } from "../controllers/leaflethelper-controller"
+import { decodePolyline } from "../controllers/leaflet/leaflethelper-controller"
 import {WalkLeg} from "@/lib/onemap/deserializedClasses/dzPtRoutes";
 
 export class WalkingRouteLeg extends RouteLeg {
@@ -9,7 +9,7 @@ export class WalkingRouteLeg extends RouteLeg {
     this.mode = "WALK"
     this.distance = data.distance ?? 0
     this.duration = data.duration ?? 0
-
+      //this.geometry = data.geometry ?? []
     // Decode its specific segment geometry for Leaflet display
     if (data.legGeometry?.points) {
       this.geometry = decodePolyline(data.legGeometry.points)

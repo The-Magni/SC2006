@@ -1,6 +1,6 @@
 import { BaseItinerary } from "./BaseItinerary"
 import { RouteLeg } from "./RouteLeg"
-import { decodePolyline } from "../controllers/leaflethelper-controller"
+import { decodePolyline } from "../controllers/leaflet/leaflethelper-controller"
 
 export class SimpleWalkingItinerary extends BaseItinerary {
   fullGeometryString?: string
@@ -15,7 +15,7 @@ export class SimpleWalkingItinerary extends BaseItinerary {
     //   Distance: ${(this.totalDistance / 1000).toFixed(2)} km<br>
     //   Mode: ${this.userMode}
     // `
-
+    this.name = "Walking Route";
     if (fullGeometry) {
       const decoded = decodePolyline(fullGeometry) || []
       this.polylineCoords = decoded.map(p => [p.lat, p.lng]) as [number, number][]
