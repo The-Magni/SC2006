@@ -90,7 +90,6 @@ export async function drawItinerariesOnMap(
 
   // Clear existing overlays before redrawing
   await clearMapOverlays(map)
-  console.log(itineraries)
 
   const itiList = Array.isArray(itineraries) ? itineraries : [itineraries]
   const driveColors = ["#FF3B30", "#34C759", "#007AFF", "#FF9500", "#AF52DE"]
@@ -164,7 +163,6 @@ polyline.bindTooltip(
 
     //walking draw polyline
     else if (iti.userMode == "walk") {
-      console.log("i am walking")
       const color = iti.userMode === "walk" ? "green" : "blue"
       const poly = leaflet.polyline(iti.polylineCoords, { color, weight: 4 }).addTo(map)
       poly.bindPopup(`${iti.userMode} – ${iti.summary}`, { autoClose: false }).openPopup()

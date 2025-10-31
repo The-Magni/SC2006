@@ -1,5 +1,5 @@
 import { RouteLeg } from "./RouteLeg"
-import { decodePolyline } from "../controllers/leaflethelper-controller"
+import { decodePolyline } from "../controllers/leaflet/leaflethelper-controller"
 import {WalkLeg} from "@/lib/onemap/deserializedClasses/dzPtRoutes";
 
 export class WalkingRouteLeg extends RouteLeg {

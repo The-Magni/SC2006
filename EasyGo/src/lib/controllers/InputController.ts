@@ -1,4 +1,4 @@
-export class ItineraryController {
+export class InputController {
     public validateLocation(lat: number, lon: number): void {
 
     }
