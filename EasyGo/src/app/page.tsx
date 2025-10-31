@@ -5,10 +5,29 @@ import { useState, useMemo, useRef } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import LayoutDefault from "@/components/layout-default";
 import LayoutSearch from "@/components/layout-search";
+import LayoutRoute from "@/components/layout-route";
 import SignupForm from "@/components/layout-signup";
 import LoginForm from "@/components/layout-login";
 import type { MapDisplayHandle } from "@/components/map-display";
 import debounce from "lodash/debounce"
+
+// This type should be refined to match your exact serialized ItineraryScore object
+type SelectedItinerary = {
+  score: number;
+  itinerary: {
+    userMode: string;
+    totalDuration: number;
+    totalDistance: number;
+    totalFare: number;
+    summary: string;
+    viaRoute?: string;
+    legs: Array<{
+      mode: string;
+      description: string;
+      distance: number;
+    }>;
+  };
+};
 
 export default function Page() {
   const searchParams = useSearchParams()
@@ -17,6 +36,9 @@ export default function Page() {
   const [startValue, setStartValue] = useState<OneMapSearchResult | null>(null)
   const [endValue, setEndValue] = useState<OneMapSearchResult | null>(null)
   const mapRef = useRef<MapDisplayHandle | null>(null)
+
+  // --- 2. Add state for the selected route ---
+  const [selectedItinerary, setSelectedItinerary] = useState<SelectedItinerary | null>(null);
 
   // OneMap auto-complete function
   const [options, setOptions] = useState<OneMapSearchResult[]>([])
@@ -63,8 +85,12 @@ export default function Page() {
     )
   } else if (layout === "route") {
     return (
-      <h1>TODO</h1>
-    )
+      <LayoutRoute
+        selectedItinerary = {selectedItinerary}
+        setLayoutInURL = {setLayoutInURL}
+        mapRef = {mapRef}
+      />
+    );
   } else if (layout === "signup") {
     return (
       <SignupForm />
