@@ -10,7 +10,7 @@ import { PublicItinerary } from "../entityclass/PublicItinerary"
 import { DrivingItinerary } from "../entityclass/DrivingItinerary"
 import { SimpleWalkingItinerary } from "../entityclass/SimpleWalkingItinerary"
 import { Carpark } from "../entityclass/Carpark"
-import { ExternalApiHandler } from "../boundary/ExternalApiHandler"
+import { ExternalApiHandler, Incident } from "../boundary/ExternalApiHandler"
 import { calCrow, getStopNumber, calDistancePointLine } from "../utils"
 import { CarparkData } from "../boundary/ExternalApiHandler"
 import { ConvenienceScoreFilterPreference } from "../entityclass/ConvenienceScoreFilterPreference"
@@ -284,27 +284,44 @@ export class ItineraryController {
 
 	public async getTrafficIncidents(itinerary: DrivingItinerary): Promise<void> {
 		try {
+			const uniqueIncidents = new Map<string, Incident>();
 			const incidents = await this.api.fetchTrafficIncident();
-			const seen = new Set<string>();
+			//const seen = new Set<string>();
 			const coords = itinerary.polylineCoords;
 			for (let i = 0; i < coords.length - 2; i++) {
 				for (const incident of incidents) {
-					if (seen.has(`${incident.Latitude}, ${incident.Longitude}`))
-						continue;
+					const key = `${incident.Type}-${incident.Message.trim()}`;
+					if (uniqueIncidents.has(key)) continue; 
+					// quick bounding-box filter first (1 km range)
+					const minLat = Math.min(coords[i][0], coords[i + 1][0]) - 0.01; 
+					const maxLat = Math.max(coords[i][0], coords[i + 1][0]) + 0.01;
+					const minLon = Math.min(coords[i][1], coords[i + 1][1]) - 0.01;
+					const maxLon = Math.max(coords[i][1], coords[i + 1][1]) + 0.01;
+
+					if (
+					incident.Latitude >= minLat &&
+					incident.Latitude <= maxLat &&
+					incident.Longitude >= minLon &&
+					incident.Longitude <= maxLon
+					) {
 					const distance = calDistancePointLine(
-						incident.Latitude, 
+						incident.Latitude,
 						incident.Longitude,
 						coords[i][0],
 						coords[i][1],
-						coords[i+1][0],
-						coords[i+1][1]
+						coords[i + 1][0],
+						coords[i + 1][1]
 					);
-					if (distance < 50e-3) {
-						seen.add(`${incident.Latitude}, ${incident.Longitude}`); 
-						itinerary.incidents.push(incident);
+
+					if (distance < 0.03) { 
+						uniqueIncidents.set(key, incident);
 					}
 				}
 			}
+		}
+		itinerary.incidents.push(...Array.from(uniqueIncidents.values()));
+
+			
 		} catch (e) {
 			console.error(e);
 			throw new Error('Fail to get traffic incidents data');

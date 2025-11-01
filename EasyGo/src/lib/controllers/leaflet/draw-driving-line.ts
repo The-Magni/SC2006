@@ -1,3 +1,4 @@
+import { Incident } from "@/lib/boundary/ExternalApiHandler";
 import { getLeaflet } from "@/lib/controllers/leaflet/leaflet-client";
 import { DrivingItineraryData } from "@/lib/controllers/Parser";
 
@@ -39,6 +40,35 @@ export async function drawDrivingRoute(map: L.Map, data: DrivingItineraryData) {
         .openPopup();
     }
     
+
+            // --- Add Incident Icons ---
+        if (data.incidents && data.incidents.length > 0) {
+            const warningIcon = L.icon({
+            iconUrl: "https://cdn-icons-png.flaticon.com/512/564/564619.png", 
+            iconSize: [26, 26],
+            iconAnchor: [13, 26],
+            popupAnchor: [0, -24],
+            });
+
+            for (const incident of data.incidents) {
+            const { Latitude, Longitude, Type, Message } = incident as Incident;
+
+            const popupContent = `
+                <b>${Type}</b><br>
+                ${Message}<br>
+                <small>(${Latitude.toFixed(4)}, ${Longitude.toFixed(4)})</small>
+            `;
+
+            L.marker([Latitude, Longitude], { icon: warningIcon })
+                .addTo(map)
+                .bindPopup(popupContent, {
+                autoClose: false,
+                closeOnClick: true,
+                closeButton: true,
+                });
+            }
+        }
+
     poly
         .bindPopup(
         `<b>🚗 Driving Route</b><br><b>to ${data.nearestCarpark.name} Carpark</b><br/>${(data.totalDistance / 1000).toFixed(1)} km • ${(data.totalDuration / 60).toFixed(0)} min`

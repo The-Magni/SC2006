@@ -1,3 +1,4 @@
+import { Incident } from "../boundary/ExternalApiHandler";
 import { BaseItinerary } from "../entityclass/BaseItinerary";
 import { Carpark } from "../entityclass/Carpark";
 import { DrivingItinerary } from "../entityclass/DrivingItinerary";
@@ -31,6 +32,7 @@ export interface DrivingItineraryData extends BaseItineraryData {
         lng: number;
         availableLots: number;
     };
+    incidents: Incident[];
 }
 
 export interface WalkingItineraryData extends BaseItineraryData {
@@ -45,6 +47,9 @@ export interface BaseItineraryData {
     score: number;
     summary: string;
     name: string;
+    incidents?: Incident[];
+    weather?: string;
+    
 }
 
 export interface ItineraryData<T extends BaseItineraryData> {
@@ -111,7 +116,9 @@ export class Parser {
                     availableLots: itinerary.nearestCarpark?.availableLots || 0
                 },
                 legs: itinerary.legs.map(Parser.serializeRouteLeg),
-                name: itinerary.name
+                name: itinerary.name,
+                incidents: itinerary.incidents,
+                weather: itinerary.weather || ""
 
             }
         }
@@ -128,7 +135,9 @@ export class Parser {
                 summary: itinerary.summary,
                 score: itinerary.convenienceScore.getScore(),
                 legs: itinerary.legs.map(Parser.serializeRouteLeg),
-                name: itinerary.name
+                name: itinerary.name,
+                weather: itinerary.weather || ""
+
             }
         }
     } 
@@ -162,6 +171,7 @@ export class Parser {
         itinerary.legs = data.data.legs.map(data => Parser.deserializeRouteLeg(data));
         itinerary.walkingDistance = data.data.walkingDistance;
         itinerary.name = data.data.name;
+        
         return itinerary;
     }
 
@@ -178,7 +188,7 @@ export class Parser {
         itinerary.walkingDistance = data.data.walkingDistance;
         itinerary.legs = data.data.legs.map(Parser.deserializeRouteLeg);
         itinerary.name = data.data.name;
-
+        itinerary.incidents = data.data.incidents;
         return itinerary;
     }
 
@@ -192,7 +202,7 @@ export class Parser {
         itinerary.polylineCoords = data.data.polyLineCoords;
         itinerary.walkingDistance = data.data.walkingDistance;
         itinerary.name = data.data.name;
-
+        itinerary.weather = data.data.weather || "";
         itinerary.legs = data.data.legs.map(Parser.deserializeRouteLeg);
         return itinerary;
     }
