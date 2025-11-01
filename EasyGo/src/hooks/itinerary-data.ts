@@ -169,7 +169,7 @@ export function useItineraryData() {
                 },
             })),
             };
-
+            console.log("Processed Scores:", processedScores);
             setRoutes(processedScores)
             return processedScores
         } finally {

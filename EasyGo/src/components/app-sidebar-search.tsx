@@ -15,7 +15,7 @@ import { OneMapSearchResult } from "@/lib/onemap/onemapAutoFill";
 import type { MapDisplayHandle } from "@/components/map-display";
 import { ConvenienceFilter, GetItinerariesResponse, useItineraryData } from "@/hooks/itinerary-data"
 import { useDebounce } from "use-debounce"
-
+import type { Incident } from "@/lib/boundary/ExternalApiHandler"
 // Polyline drawing imports
 
 import { BaseItineraryData, DrivingItineraryData, ItineraryData} from "@/lib/controllers/Parser";
@@ -33,6 +33,7 @@ type SidebarSearchProps = {
   endValue: OneMapSearchResult | null;
   mapRef: RefObject<MapDisplayHandle | null>;
   // Add new typing for routing data @John
+  
 };
 
 // This is sample data.D
@@ -140,6 +141,8 @@ const RouteCard = ({
     score: number;
     type: string;
     legs: Leg[];
+    weather: string;
+    incidents: Incident[];
   };
   onClick: () => void;
 }) => {
@@ -183,11 +186,44 @@ const RouteCard = ({
       {/* This is the content, it shows the step-by-step details.
       */}
       <AccordionContent className="p-0">
-        {/* Start Pin */}
-        <div className="flex items-center gap-6 ml-7 mb-2">
-          <Circle className="h-4 w-4 text-white" />
-          <h4 className="font-semibold">Start</h4>
-        </div>
+<div className="ml-7 mr-4 mt-3 space-y-3 text-sm">
+
+  {/* Weather */}
+  {route.weather && (
+    <div className="rounded-lg border border-blue-800/30 bg-blue-900/10 p-3">
+      <h4 className="font-semibold text-blue-300 mb-1">Weather</h4>
+      <p className="text-blue-100 leading-relaxed ml-1">{route.weather}</p>
+    </div>
+  )}
+
+  {/* Traffic Incidents */}
+  {route.type === "DrivingItinerary" && route.incidents?.length > 0 && (
+    <details className="group rounded-lg border border-red-800/30 bg-red-900/10 p-3">
+      <summary className="cursor-pointer font-semibold text-red-300 flex items-center justify-between">
+        Nearby Traffic Incidents ({route.incidents.length})
+        <span className="text-red-400 group-open:rotate-90 transition-transform">›</span>
+      </summary>
+      <ul className="mt-2 list-disc list-inside space-y-1 text-red-100 leading-relaxed ml-2">
+        {route.incidents.map((incident, idx) => (
+          <li key={idx}>
+            <span className="font-medium">{incident.Type}</span>: {incident.Message}
+          </li>
+        ))}
+      </ul>
+    </details>
+  )}
+</div>
+
+{/* Start Pin */}
+<div className="flex items-center gap-6 ml-7 mt-3 mb-2">
+  <Circle className="h-4 w-4 text-white" />
+  <h4 className="font-semibold">Start</h4>
+</div>
+
+
+
+
+
 
         {/* Itinerary Legs */}
         {route.legs.map((leg, index) => (
@@ -390,7 +426,7 @@ export function AppSidebarSearch({ options, loading, debouncedFetch, setOptions,
     mapRef.current.clearPolylines();
     drawItineraryLine(map, itinerary.mode, itinerary.data);
   };
-const handleAutoSearch = async (start: OneMapSearchResult, end: OneMapSearchResult) => {
+/* const handleAutoSearch = async (start: OneMapSearchResult, end: OneMapSearchResult) => {
   try {
     setErrorMessage(null);
 
@@ -432,7 +468,25 @@ const handleAutoSearch = async (start: OneMapSearchResult, end: OneMapSearchResu
     setRoutes({ best: [], driving: [], public: [], walking: [] });
     mapRef?.current?.clearPolylines?.();
   }
-};
+}; */
+
+/*   const prevCoordsRef = React.useRef<{ start: string; end: string } | null>(null);
+  useEffect(() => {
+    if (!startValue || !endValue) return;
+
+    const startKey = `${startValue.LATITUDE},${startValue.LONGITUDE}`;
+    const endKey = `${endValue.LATITUDE},${endValue.LONGITUDE}`;
+
+    // Only trigger if this start/end pair changed
+    if (
+      !prevCoordsRef.current ||
+      prevCoordsRef.current.start !== startKey ||
+      prevCoordsRef.current.end !== endKey
+    ) {
+      prevCoordsRef.current = { start: startKey, end: endKey };
+      handleAutoSearch(startValue, endValue);
+    }
+  }, [startValue, endValue]); */
 
   return (
     <Sidebar
@@ -504,11 +558,6 @@ const handleAutoSearch = async (start: OneMapSearchResult, end: OneMapSearchResu
                   onChange={async (event, newValue) => {
                     if (newValue && typeof newValue !== "string") {
                       setStartValue(newValue);
-
-                      // 🟦 Trigger auto search if endValue already chosen
-                      if (endValue) {
-                        await handleAutoSearch(newValue, endValue);
-                      }
                     }
                   }}
 
@@ -603,10 +652,6 @@ const handleAutoSearch = async (start: OneMapSearchResult, end: OneMapSearchResu
                   onChange={async (event, newValue) => {
                     if (newValue && typeof newValue !== "string") {
                       setEndValue(newValue);
-
-                      if (startValue) {
-                        await handleAutoSearch(startValue, newValue);
-                      }
                     }
                   }}
 
@@ -669,6 +714,72 @@ const handleAutoSearch = async (start: OneMapSearchResult, end: OneMapSearchResu
                 />
               </div>
             )}
+
+                        {!isCollapsed && (
+              <div className="px-2 pt-4">
+              {/* where the search is actually triggered ===================================*/}
+                <Button
+                  className="w-full cursor-pointer"
+                  variant="outline"
+                  disabled={routeLoading}
+                  onClick={async () => {
+                    if (!startValue || !endValue) {
+                      alert("Please select both start and end points first.");
+                      return;
+                    }
+
+                    // Reset old error message
+                    setErrorMessage(null);
+
+                    const filters = {
+                      durationWeight: filterWeights["time-taken"],
+                      walkingDistanceWeight: filterWeights["amount-of-walking"],
+                      noTransferWeight: filterWeights["number-of-transfers"],
+                      carparkAvailabilityWeight: filterWeights["carpark-availability"],
+                      busWaitTimeWeight: filterWeights["bus-wait-time"],
+                      platformDensityWeight: filterWeights["crowd-level"],
+                      fareWeight: filterWeights["fare-cost"],
+                    };
+
+                    try {
+                        const result = await getItinerariesAndScore(
+                          [parseFloat(startValue.LATITUDE), parseFloat(startValue.LONGITUDE)],
+                          [parseFloat(endValue.LATITUDE), parseFloat(endValue.LONGITUDE)],
+                          startValue.SEARCHVAL,
+                          endValue.SEARCHVAL,
+                          filters
+                        );
+
+                        // Handle invalid or empty responses
+                        if (
+                          !result ||
+                          (!result.best?.length &&
+                          !result.driving?.length &&
+                          !result.public?.length &&
+                          !result.walking?.length)
+                        ) {
+                          setErrorMessage("No possible routes found. Please try another location.");
+                          setRoutes({ best: [], driving: [], public: [], walking: [] });
+                        }
+
+                      } catch (err) {
+                        console.error("Error fetching routes:", err);
+                        setErrorMessage("No possible routes found. Please try another location.");
+                        setRoutes({ best: [], driving: [], public: [], walking: [] });
+                        return; 
+                      }
+                    }}
+                      >
+                    {routeLoading ? "Fetching Routes..." : "Get Routes"}
+                  </Button>
+                    {errorMessage && (
+                      <div className="flex flex-col items-center justify-center py-8 text-center text-red-400">
+                        <DatabaseIcon className="h-8 w-8 mb-2" />
+                        <p className="text-sm">{errorMessage}</p>
+                      </div>
+                    )}
+              {/* end of where the search is actually triggered ===================================*/}
+            </div>)}
 
             {!isCollapsed && (
               <div className="px-2 pt-4">
@@ -751,6 +862,8 @@ const handleAutoSearch = async (start: OneMapSearchResult, end: OneMapSearchResu
                                 | "PublicItinerary"
                                 | "SimpleWalkingItinerary",
                               legs: r.itinerary.data.legs,
+                              weather: r.itinerary.data.weather || "",
+                              incidents: r.itinerary.data.incidents || [],
                             }}
                             onClick={() => handleRouteClick(r.itinerary)}
                           />
