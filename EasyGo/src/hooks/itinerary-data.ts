@@ -36,8 +36,8 @@ export function useItineraryData() {
     const [routes, setRoutes] = useState<GetScoreResponse | null>(null)
     const [loading, setLoading] = useState(false)
 
-    async function getItineraries(start: [number, number], end: [number, number], startName: string, endName: string) {
-        const url = `/api/get-itineraries?startLat=${start[0]}&startLon=${start[1]}&endLat=${end[0]}&endLon=${end[1]}&startName=${startName}&endName=${endName}`
+    async function getItineraries(start: [number, number], end: [number, number], startName: string, endName: string, driveType: "carpark" | "direct") {
+        const url = `/api/get-itineraries?startLat=${start[0]}&startLon=${start[1]}&endLat=${end[0]}&endLon=${end[1]}&startName=${startName}&endName=${endName}&driveType=${driveType}`
         const res = await fetch(url)
         if (!res.ok) throw new Error(`Failed to fetch itineraries: ${res.status}`)
         return (await res.json()) as GetItinerariesResponse
@@ -68,11 +68,12 @@ export function useItineraryData() {
         end: [number, number],
         startName: string,
         endName: string,
-        filters: ConvenienceFilter
+        filters: ConvenienceFilter,
+        driveType: "carpark" | "direct"
     ) {
         try {
             setLoading(true)
-            const itineraries = await getItineraries(start, end, startName, endName)
+            const itineraries = await getItineraries(start, end, startName, endName, driveType)
             const scored = await getScore(itineraries, filters)
 
             //AGAIN, NEVER REPLICATE THIS PATCHJOB

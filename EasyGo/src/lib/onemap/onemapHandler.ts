@@ -26,7 +26,7 @@ export async function getRoute(
             `&end=${endLat},${endLng}` +
             `&routeType=pt` +
             `&date=${date}` +
-            `&time=${curtime}` +
+            `&time=${curtime}` + 
             `&mode=TRANSIT` +
             `&maxWalkDistance=2000` +
             `&numItineraries=5`

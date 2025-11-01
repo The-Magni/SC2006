@@ -260,6 +260,7 @@ export function AppSidebarSearch({ options, loading, debouncedFetch, setOptions,
   const {state} = useSidebar();
   const isCollapsed = state === "collapsed"
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [driveType, setDriveType] = useState<"carpark" | "direct">("carpark");
 
   // Temporary button state
   const [isToggled, setIsToggled] = useState(false);
@@ -425,89 +426,6 @@ export function AppSidebarSearch({ options, loading, debouncedFetch, setOptions,
     mapRef.current.clearPolylines();
     drawItineraryLine(map, itinerary.mode, itinerary.data);
   };
-/* const handleAutoSearch = async (start: OneMapSearchResult, end: OneMapSearchResult) => {
-  try {
-    setErrorMessage(null);
-
-    const filters = {
-      durationWeight: filterWeights["time-taken"],
-      walkingDistanceWeight: filterWeights["amount-of-walking"],
-      noTransferWeight: filterWeights["number-of-transfers"],
-      carparkAvailabilityWeight: filterWeights["carpark-availability"],
-      busWaitTimeWeight: filterWeights["bus-wait-time"],
-      platformDensityWeight: filterWeights["crowd-level"],
-      fareWeight: filterWeights["fare-cost"],
-    };
-
-  const handleAutoSearch = async (start: OneMapSearchResult, end: OneMapSearchResult) => {
-    try {
-      setErrorMessage(null);
-
-      const filters = {
-        durationWeight: filterWeights["time-taken"],
-        walkingDistanceWeight: filterWeights["amount-of-walking"],
-        noTransferWeight: filterWeights["number-of-transfers"],
-        carparkAvailabilityWeight: filterWeights["carpark-availability"],
-        busWaitTimeWeight: filterWeights["bus-wait-time"],
-        platformDensityWeight: filterWeights["crowd-level"],
-        fareWeight: filterWeights["fare-cost"],
-      };
-
-      const result = await getItinerariesAndScore(
-        [parseFloat(start.LATITUDE), parseFloat(start.LONGITUDE)],
-        [parseFloat(end.LATITUDE), parseFloat(end.LONGITUDE)],
-        start.SEARCHVAL,
-        end.SEARCHVAL,
-        filters
-      );
-
-      if (
-        !result ||
-        (!result.best?.length &&
-          !result.driving?.length &&
-          !result.public?.length &&
-          !result.walking?.length)
-      ) {
-        setErrorMessage("No possible routes found. Please try another location.");
-        setRoutes({ best: [], driving: [], public: [], walking: [] });
-        mapRef?.current?.clearPolylines?.();
-        return;
-      }
-
-      setRoutes(result);
-    } catch (err) {
-      console.error("Error fetching routes:", err);
-      setErrorMessage("No possible routes found. Please try another location.");
-      setRoutes({ best: [], driving: [], public: [], walking: [] });
-      mapRef?.current?.clearPolylines?.();
-    }
-
-    setRoutes(result);
-  } catch (err) {
-    console.error("Error fetching routes:", err);
-    setErrorMessage("No possible routes found. Please try another location.");
-    setRoutes({ best: [], driving: [], public: [], walking: [] });
-    mapRef?.current?.clearPolylines?.();
-  }
-}; */
-
-/*   const prevCoordsRef = React.useRef<{ start: string; end: string } | null>(null);
-  useEffect(() => {
-    if (!startValue || !endValue) return;
-
-    const startKey = `${startValue.LATITUDE},${startValue.LONGITUDE}`;
-    const endKey = `${endValue.LATITUDE},${endValue.LONGITUDE}`;
-
-    // Only trigger if this start/end pair changed
-    if (
-      !prevCoordsRef.current ||
-      prevCoordsRef.current.start !== startKey ||
-      prevCoordsRef.current.end !== endKey
-    ) {
-      prevCoordsRef.current = { start: startKey, end: endKey };
-      handleAutoSearch(startValue, endValue);
-    }
-  }, [startValue, endValue]); */
 
   return (
     <Sidebar
@@ -736,6 +654,38 @@ export function AppSidebarSearch({ options, loading, debouncedFetch, setOptions,
               </div>
             )}
 
+              {!isCollapsed && (
+                  <div className="px-2 pt-3">
+                    <div className="flex items-center justify-between bg-[#121212] border border-white/10 rounded-lg px-4 py-2">
+                      <span className="text-sm text-white">Driving Mode</span>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => setDriveType("carpark")}
+                          className={`text-xs px-3 py-1 rounded-md transition-colors ${
+                            driveType === "carpark"
+                              ? "bg-blue-500 text-white"
+                              : "bg-gray-800 text-gray-300 hover:bg-gray-700"
+                          }`}
+                        >
+                          To Carpark
+                        </button>
+                        <button
+                          onClick={() => setDriveType("direct")}
+                          className={`text-xs px-3 py-1 rounded-md transition-colors ${
+                            driveType === "direct"
+                              ? "bg-blue-500 text-white"
+                              : "bg-gray-800 text-gray-300 hover:bg-gray-700"
+                          }`}
+                        >
+                          Direct
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+
+
                         {!isCollapsed && (
               <div className="px-2 pt-4">
               {/* where the search is actually triggered ===================================*/}
@@ -768,7 +718,8 @@ export function AppSidebarSearch({ options, loading, debouncedFetch, setOptions,
                           [parseFloat(endValue.LATITUDE), parseFloat(endValue.LONGITUDE)],
                           startValue.SEARCHVAL,
                           endValue.SEARCHVAL,
-                          filters
+                          filters,
+                          driveType
                         );
 
                         // Handle invalid or empty responses

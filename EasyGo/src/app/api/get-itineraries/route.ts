@@ -16,6 +16,7 @@ export async function GET(request: NextRequest) {
     const startLon = searchParams.get('startLon');
     const endLat = searchParams.get('endLat');
     const endLon = searchParams.get('endLon');
+    const driveType = searchParams.get('driveType') || 'carpark'; // 'carpark' or 'direct'
     if (!startLat || ! startLon || !endLat || !endLon)
         return NextResponse.json({
             code: 404,
@@ -23,41 +24,66 @@ export async function GET(request: NextRequest) {
         });
     const start: [number, number] = [parseFloat(startLat), parseFloat(startLon)];
     const end: [number, number] = [parseFloat(endLat), parseFloat(endLon)];
-    const nearestCarpark = await controller.getNearestCarpark(end[0], end[1]);
-    if (!nearestCarpark) {
+
+    // ---------- Handle "driving" itineraries ----------
+    const drivingItineraries: DrivingItinerary[] = [];
+
+    if (driveType === "carpark") {
+        // 🚗 Existing behavior (with nearest carpark)
+        const nearestCarpark = await controller.getNearestCarpark(end[0], end[1]);
+        if (!nearestCarpark) {
         return NextResponse.json({
             error: 404,
-            message: 'No carpark data found'
+            message: "No carpark data found",
         });
-    }
-    const drivingItineraries: DrivingItinerary[] = []
-    for ( const {carpark, distance} of nearestCarpark) {
+        }
+
+        for (const { carpark, distance } of nearestCarpark) {
         const location = carpark.Location;
-        const [lat, lon] = location.split(' ').map(parseFloat);
-        const drivingData = await getRoute(start, [lat, lon], 'drive');
-        const walkingData = await getRoute([lat, lon], end, 'walk');
-        const drivingItinerary = ItineraryController.parseResponse(drivingData, 'drive')[0] as DrivingItinerary;
-        const walkingItinerary = ItineraryController.parseResponse(walkingData, 'walk')[0] as SimpleWalkingItinerary;
-        if (!drivingItinerary || ! walkingItinerary)
-            continue;
+        const [lat, lon] = location.split(" ").map(parseFloat);
+
+        const drivingData = await getRoute(start, [lat, lon], "drive");
+        const walkingData = await getRoute([lat, lon], end, "walk");
+
+        const drivingItinerary = ItineraryController.parseResponse(drivingData, "drive")[0] as DrivingItinerary;
+        const walkingItinerary = ItineraryController.parseResponse(walkingData, "walk")[0] as SimpleWalkingItinerary;
+
+        if (!drivingItinerary || !walkingItinerary) continue;
+
         drivingItinerary.legs = drivingItinerary.legs.concat(walkingItinerary.legs);
         drivingItinerary.polylineCoords = drivingItinerary.polylineCoords.concat(walkingItinerary.polylineCoords);
         drivingItinerary.totalDuration += walkingItinerary.totalDuration;
         drivingItinerary.totalDistance += walkingItinerary.totalDistance;
+
         drivingItinerary.nearestCarpark = new Carpark({
             id: carpark.CarParkID,
             name: carpark.Development,
-            lat: lat,
+            lat,
             lng: lon,
-            availableLots: carpark.AvailableLots
-            }
-        );
+            availableLots: carpark.AvailableLots,
+        });
+
         drivingItineraries.push(drivingItinerary);
+        }
+    } else if (driveType === "direct") {
+        // 🚗 Simplified route: start → end, no carpark search
+        const drivingData = await getRoute(start, end, "drive");
+        const parsed = ItineraryController.parseResponse(drivingData, "drive") as DrivingItinerary[];
+        drivingItineraries.push(...parsed);
     }
 
-    let data = await getRoute(start, end, "pt");
-    const publicItineraries = ItineraryController.parseResponse(data, 'pt') as PublicItinerary[];
-    data = await getRoute(start, end, 'walk');
+    let publicItineraries: PublicItinerary[] = [];
+    try {
+        const data = await getRoute(start, end, "pt");
+        publicItineraries = ItineraryController.parseResponse(data, "pt") as PublicItinerary[];
+    } catch (err) {
+        console.error("Public transport route failed:", err);
+        publicItineraries = [];
+    }
+
+
+
+    const data = await getRoute(start, end, 'walk');
     const walkingItineraries = ItineraryController.parseResponse(data, 'walk') as SimpleWalkingItinerary[];
     // get bus wait time and plaform density for public itineraries
     await Promise.all(
