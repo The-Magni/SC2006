@@ -82,10 +82,6 @@ const filterConfig = {
   ]
 } as const;
 
-
-
-
-
 // Initialize filter weights for all filter IDs
 const initialFilterWeights: Record<string, number> = Object.keys(filterConfig).reduce(
   (acc, mode) => ({
@@ -172,7 +168,7 @@ const RouteCard = ({
           <div className="flex-1">
             <h4 className="font-semibold">{route.name}</h4>
             <p className="text-sm text-muted-foreground">
-              {route.time} min ({route.distance} km)
+              {route.time} min ({route.distance.toFixed(1)} km)
             </p>
           </div>
 
@@ -251,6 +247,7 @@ export function AppSidebarSearch({ options, loading, debouncedFetch, setOptions,
     // route.score = filterWeights["time-taken"] * 2;
   })
   */
+
   const prevFilters = React.useRef<Record<string, number>>(filterWeights);
   useEffect(() => {
     if (!routeResults) return;
@@ -388,14 +385,13 @@ export function AppSidebarSearch({ options, loading, debouncedFetch, setOptions,
 
   }, [debouncedFilters, routeResults, startValue, endValue, getScore, setRoutes]);
   
-    // Handle route card click to draw polyline on map
+  // Handle route card click to draw polyline on map
   const handleRouteClick = (itinerary: ItineraryData<BaseItineraryData>) => {
     if (!mapRef?.current?.map) return;
     const map = mapRef.current.map;
     mapRef.current.clearPolylines();
     drawItineraryLine(map, itinerary.mode, itinerary.data);
   };
-
 
   return (
     <Sidebar
@@ -727,69 +723,66 @@ export function AppSidebarSearch({ options, loading, debouncedFetch, setOptions,
           <SidebarGroupLabel>Routes</SidebarGroupLabel>
 
           <SidebarGroupContent>
-              {!isCollapsed && (
-                <>
-                  {/* ——— Loader / No Routes ——— */}
-                  {(routeLoading || isRecalculating) ? (
-                    <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
-                      <Loader2 className="h-6 w-6 animate-spin mb-2 text-blue-500" />
-                      <p className="text-sm">
-                        {routeLoading ? "Fetching routes..." : "Recalculating scores..."}
-                      </p>
-                    </div>
-
-                  ) : routeResults ? (
-                    (() => {
-                      const currentRoutes =
-                        selectedMode === "best"
-                          ? routeResults.best
-                          : selectedMode === "drive"
-                            ? routeResults.driving
-                            : selectedMode === "public"
-                              ? routeResults.public
-                              : routeResults.walking;
-
-                      if (!currentRoutes?.length) {
-                        return (
-                          <p className="text-muted-foreground text-sm px-3 py-2">
-                            No routes found for this mode.
-                          </p>
-                        );
-                      }
-                      {/* ——— Accordion with RouteCards ——— */}
-                      return (
-                        <Accordion type="single" collapsible className="w-full space-y-3">
-                          {currentRoutes.map((r, idx) => (
-                            <RouteCard
-                              key={`${selectedMode}-route-${idx}`}
-                              route={{
-                                value: `${selectedMode}-route-${idx}`,
-                                name: r.itinerary.data.name,
-                                distance: (r.itinerary.data.totalDistance ?? 0) / 1000,
-                                time: Math.round((r.itinerary.data.totalDuration ?? 0) / 60),
-                                score: r.score ?? 0,
-                                type: r.itinerary.mode as
-                                  | "DrivingItinerary"
-                                  | "PublicItinerary"
-                                  | "SimpleWalkingItinerary",
-                                legs: r.itinerary.data.legs,
-                              }}
-                              onClick={() => handleRouteClick(r.itinerary)}
-                            />
-                          ))}
-                        </Accordion>
-                      );
-                    })()
-                  ) : (
-                    <p className="text-muted-foreground text-sm px-3 py-2">
-                      No routes yet. Click “Get Routes” to fetch available options.
+            {!isCollapsed && (
+              <>
+                {/* ——— Loader / No Routes ——— */}
+                {(routeLoading || isRecalculating) ? (
+                  <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
+                    <Loader2 className="h-6 w-6 animate-spin mb-2 text-blue-500" />
+                    <p className="text-sm">
+                      {routeLoading ? "Fetching routes..." : "Recalculating scores..."}
                     </p>
-                  )}
+                  </div>
+
+                ) : routeResults ? (
+                  (() => {
+                    const currentRoutes =
+                      selectedMode === "best"
+                        ? routeResults.best
+                        : selectedMode === "drive"
+                          ? routeResults.driving
+                          : selectedMode === "public"
+                            ? routeResults.public
+                            : routeResults.walking;
+
+                    if (!currentRoutes?.length) {
+                      return (
+                        <p className="text-muted-foreground text-sm px-3 py-2">
+                          No routes found for this mode.
+                        </p>
+                      );
+                    }
+                    {/* ——— Accordion with RouteCards ——— */}
+                    return (
+                      <Accordion type="single" collapsible className="w-full space-y-3">
+                        {currentRoutes.map((r, idx) => (
+                          <RouteCard
+                            key={`${selectedMode}-route-${idx}`}
+                            route={{
+                              value: `${selectedMode}-route-${idx}`,
+                              name: r.itinerary.data.name,
+                              distance: (r.itinerary.data.totalDistance ?? 0) / 1000,
+                              time: Math.round((r.itinerary.data.totalDuration ?? 0) / 60),
+                              score: r.score ?? 0,
+                              type: r.itinerary.mode as
+                                | "DrivingItinerary"
+                                | "PublicItinerary"
+                                | "SimpleWalkingItinerary",
+                              legs: r.itinerary.data.legs,
+                            }}
+                            onClick={() => handleRouteClick(r.itinerary)}
+                          />
+                        ))}
+                      </Accordion>
+                    );
+                  })()
+                ) : (
+                  <p className="text-muted-foreground text-sm px-3 py-2">
+                    No routes yet. Click “Get Routes” to fetch available options.
+                  </p>
+                )}
                 </>
               )}
-
-
-
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
