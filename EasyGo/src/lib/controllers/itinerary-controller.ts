@@ -16,7 +16,6 @@ import { CarparkData } from "../boundary/ExternalApiHandler"
 import { ConvenienceScoreFilterPreference } from "../entityclass/ConvenienceScoreFilterPreference"
 import { OneMapPTResponse, TransitLeg, WalkLeg } from "@/lib/onemap/deserializedClasses/dzPtRoutes"
 import { OneMapDrivingRouteResponse } from "@/lib/onemap/deserializedClasses/dzDrivingRoutes"
-//import { OneMapWalkingRouteResponse } from "@/lib/onemap/deserializedClasses/dzWalkRoutes"
 import { Bound } from "../entityclass/ConvenienceScore"
 
 export type ItineraryScore<T extends BaseItinerary> = {
