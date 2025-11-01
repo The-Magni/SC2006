@@ -19,10 +19,10 @@ export default function LayoutSignup({ ...props }: React.ComponentProps<typeof C
           <CardContent>
             <form>
               <FieldGroup>
-                {/* <Field>
+                <Field>
                   <FieldLabel htmlFor="name">Full Name</FieldLabel>
-                  <Input id="name" type="text" placeholder="John Doe" required />
-                </Field> */}
+                  <Input name="name" id="name" type="text" placeholder="John Doe" required />
+                </Field>
                 <Field>
                   <FieldLabel htmlFor="email">Email</FieldLabel>
                   <Input

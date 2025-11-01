@@ -6,19 +6,13 @@ import { Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupLabel
 import { Bookmark } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
+import { useUser } from "@/hooks/useUser";
 
-// This is sample data.
-const data = {
-  user: {
-    name: "shadcn",
-    email: "m@example.com",
-    avatar: "/avatars/shadcn.jpg",
-  }
-}
 
 export function AppSidebarDefault({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const {state} = useSidebar();
   const isCollapsed = state === "collapsed"
+  const profile = useUser();
 
   return (
     <Sidebar collapsible="icon" {...props}>
@@ -55,7 +49,14 @@ export function AppSidebarDefault({ ...props }: React.ComponentProps<typeof Side
       </SidebarContent>
 
       <SidebarFooter>
-        <NavUser user={data.user} />
+        {
+          profile && 
+          <NavUser user={{
+            name: profile.name,
+            email: profile.email,
+            avatar: profile.avatar
+          }} />
+        }
       </SidebarFooter>
 
       <SidebarRail />
