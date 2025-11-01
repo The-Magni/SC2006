@@ -17,7 +17,6 @@ import { ConvenienceFilter, GetItinerariesResponse, useItineraryData } from "@/h
 import { useDebounce } from "use-debounce"
 import type { Incident } from "@/lib/boundary/ExternalApiHandler"
 // Polyline drawing imports
-
 import { BaseItineraryData, DrivingItineraryData, ItineraryData} from "@/lib/controllers/Parser";
 import { drawItineraryLine } from "@/lib/controllers/leaflet/leaflethelper-controller";
 
@@ -26,7 +25,7 @@ type SidebarSearchProps = {
   loading: boolean;
   debouncedFetch: (value: string) => void;
   setOptions: React.Dispatch<React.SetStateAction<OneMapSearchResult[]>>;
-  setLayoutInURL: (layout: "search" | "default" | "route") => void;
+  setLayoutInURL: (layout: "default" | "search" | "routes" | "signup" | "login" | "profile") => void;
   setStartValue: (value: OneMapSearchResult | null) => void;
   setEndValue: (value: OneMapSearchResult | null) => void;
   startValue: OneMapSearchResult | null;
@@ -440,25 +439,47 @@ export function AppSidebarSearch({ options, loading, debouncedFetch, setOptions,
       fareWeight: filterWeights["fare-cost"],
     };
 
-    const result = await getItinerariesAndScore(
-      [parseFloat(start.LATITUDE), parseFloat(start.LONGITUDE)],
-      [parseFloat(end.LATITUDE), parseFloat(end.LONGITUDE)],
-      start.SEARCHVAL,
-      end.SEARCHVAL,
-      filters
-    );
+  const handleAutoSearch = async (start: OneMapSearchResult, end: OneMapSearchResult) => {
+    try {
+      setErrorMessage(null);
 
-    if (
-      !result ||
-      (!result.best?.length &&
-        !result.driving?.length &&
-        !result.public?.length &&
-        !result.walking?.length)
-    ) {
+      const filters = {
+        durationWeight: filterWeights["time-taken"],
+        walkingDistanceWeight: filterWeights["amount-of-walking"],
+        noTransferWeight: filterWeights["number-of-transfers"],
+        carparkAvailabilityWeight: filterWeights["carpark-availability"],
+        busWaitTimeWeight: filterWeights["bus-wait-time"],
+        platformDensityWeight: filterWeights["crowd-level"],
+        fareWeight: filterWeights["fare-cost"],
+      };
+
+      const result = await getItinerariesAndScore(
+        [parseFloat(start.LATITUDE), parseFloat(start.LONGITUDE)],
+        [parseFloat(end.LATITUDE), parseFloat(end.LONGITUDE)],
+        start.SEARCHVAL,
+        end.SEARCHVAL,
+        filters
+      );
+
+      if (
+        !result ||
+        (!result.best?.length &&
+          !result.driving?.length &&
+          !result.public?.length &&
+          !result.walking?.length)
+      ) {
+        setErrorMessage("No possible routes found. Please try another location.");
+        setRoutes({ best: [], driving: [], public: [], walking: [] });
+        mapRef?.current?.clearPolylines?.();
+        return;
+      }
+
+      setRoutes(result);
+    } catch (err) {
+      console.error("Error fetching routes:", err);
       setErrorMessage("No possible routes found. Please try another location.");
       setRoutes({ best: [], driving: [], public: [], walking: [] });
       mapRef?.current?.clearPolylines?.();
-      return;
     }
 
     setRoutes(result);

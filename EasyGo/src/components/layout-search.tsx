@@ -14,13 +14,14 @@ type LayoutSearchProps = {
   loading: boolean;
   debouncedFetch: (value: string) => void;
   setOptions: React.Dispatch<React.SetStateAction<OneMapSearchResult[]>>;
-  setLayoutInURL: (layout: "search" | "default" | "route") => void;
+  setLayoutInURL: (layout: "default" | "search" | "routes" | "signup" | "login" | "profile") => void;
   setStartValue: (value: OneMapSearchResult | null) => void;
   setEndValue: (value: OneMapSearchResult | null) => void;
   startValue: OneMapSearchResult | null;
   endValue: OneMapSearchResult | null;
   mapRef: RefObject<MapDisplayHandle | null>;
 };
+
 
 export default function LayoutSearch(
   {

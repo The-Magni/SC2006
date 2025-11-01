@@ -5,8 +5,10 @@ import { useState, useMemo, useRef } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import LayoutDefault from "@/components/layout-default";
 import LayoutSearch from "@/components/layout-search";
-import SignupForm from "@/components/layout-signup";
-import LoginForm from "@/components/layout-login";
+import LayoutRoutes from "@/components/layout-routes";
+import LayoutSignup from "@/components/layout-signup";
+import LayoutLogin from "@/components/layout-login";
+import LayoutProfile from "@/components/layout-profile";
 import type { MapDisplayHandle } from "@/components/map-display";
 import debounce from "lodash/debounce"
 
@@ -62,18 +64,31 @@ export default function Page() {
         mapRef = {mapRef}
       />
     )
-  } else if (layout === "route") {
+  } else if (layout === "routes") {
     return (
-      <h1>TODO</h1>
+      <LayoutRoutes
+        options = {options}
+        loading = {loading}
+        debouncedFetch = {debouncedFetch}
+        setOptions = {setOptions}
+        setLayoutInURL = {setLayoutInURL}
+        setStartValue = {setStartValue}
+        setEndValue = {setEndValue}
+        mapRef = {mapRef}
+      />
     );
   } else if (layout === "signup") {
     return (
-      <SignupForm />
+      <LayoutSignup />
     )
   } else if (layout === "login") {
     return (
-      <LoginForm />
+      <LayoutLogin />
     )
+  } else if (layout === "profile") {
+    return (
+      <LayoutProfile />
+    );
   } else {
     return (
       <LayoutDefault
