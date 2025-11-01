@@ -20,6 +20,6 @@ export class WalkingRouteLeg extends RouteLeg {
     const distanceText = `${Math.round(this.distance)} m`
 
     // Readable display text
-    this.description = `Walk from <b>${fromName}</b> → <b>${toName}</b> (${distanceText})`
+    this.description = `Walk from ${fromName} → ${toName} (${distanceText})`
   }
 }

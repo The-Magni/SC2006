@@ -11,7 +11,7 @@ import { Slider } from "@/components/ui/slider"
 import { NavUser } from "@/components/nav-user"
 import Autocomplete from "@mui/material/Autocomplete";
 import TextField from "@mui/material/TextField";
-import { Star, Car, Bus, Footprints, Circle, MapPinIcon, ListFilterIcon, Bookmark, LucideIcon, Loader2 } from "lucide-react";
+import { Star, Car, Bus, Footprints, Circle, MapPinIcon, ListFilterIcon, Bookmark, LucideIcon, Loader2, DatabaseIcon } from "lucide-react";
 import { OneMapSearchResult } from "@/lib/onemap/onemapAutoFill";
 import type { MapDisplayHandle } from "@/components/map-display";
 import { ConvenienceFilter, GetItinerariesResponse, useItineraryData } from "@/hooks/itinerary-data"
@@ -126,37 +126,78 @@ const getRouteIcon = (type: string): LucideIcon => {
 };
 
 // Reusable RouteCard component to reduce repetition
-const RouteCard = ({ route }: { route: {
+const RouteCard = ({
+  route,
+  onClick,
+  expanded,
+}: {
+  route: {
     name: string;
     distance: number;
     time: number;
     score: number;
-    type: string
-  };}) => {
+    type: string;
+    legs?: { distance: number; description: string }[];
+  };
+  onClick?: () => void;
+  expanded: boolean;
+}) => {
   const RouteIcon = getRouteIcon(route.type);
 
   return (
     <div className="px-1 pt-4">
-      <Card className="cursor-pointer">
+      <Card
+        className={`cursor-pointer transition-all hover:shadow-md ${
+          expanded ? "border-blue-500 shadow-blue-500/30" : ""
+        }`}
+        onClick={onClick}
+      >
         <CardHeader>
-          <div className="flex items-center">
-            <RouteIcon className="h-5 w-5 mr-2" />
+          <div className="flex items-center justify-between">
+            <div className="flex items-center">
+              <RouteIcon className="h-5 w-5 mr-2 text-blue-400" />
+              <CardTitle className="text-base">{route.name}</CardTitle>
+            </div>
 
-            <CardTitle>{route.name}</CardTitle>
           </div>
-          <CardDescription>Distance: {route.distance} km</CardDescription>
-          <CardAction><Bookmark className="h-5 w-5 hover:text-blue-500 transition duration-150" /></CardAction>
+          <CardDescription>
+            {(route.distance || 0).toFixed(2)} km • {route.time} min
+          </CardDescription>
         </CardHeader>
+
         <CardContent>
-          <p>Time: {route.time} min</p>
-        </CardContent>
-        <CardFooter>
           <p>Convenience Score: {route.score}</p>
-        </CardFooter>
+
+          {/* Expanded details */}
+          {expanded && (
+            <div className="mt-3 border-t border-gray-700 pt-3 text-sm text-gray-300 animate-in fade-in duration-300">
+              <p className="mb-2">
+                <b>Route Legs:</b>
+              </p>
+
+              {route.legs && route.legs.length > 0 ? (
+                <ul className="space-y-2 list-disc list-inside text-gray-400">
+                  {route.legs.map((leg, i) => (
+                    <li key={i}>
+                      <b>Leg {i + 1}:</b> {leg.description} <br />
+                      <span className="text-xs text-gray-500">
+                        Distance: {(leg.distance / 1000).toFixed(2)} km
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p>No leg details available.</p>
+              )}
+            </div>
+          )}
+        </CardContent>
       </Card>
     </div>
-  )
+  );
 };
+
+
 
 // Add routing data prop @John
 export function AppSidebarSearch({ options, loading, debouncedFetch, setOptions, setLayoutInURL, setStartValue, setEndValue, startValue, endValue, mapRef, ...props}: SidebarSearchProps & React.ComponentProps<typeof Sidebar>) {
@@ -166,9 +207,11 @@ export function AppSidebarSearch({ options, loading, debouncedFetch, setOptions,
   const [filterWeights, setFilterWeights] = useState<Record<string, number>>(initialFilterWeights);
   const [debouncedFilters] = useDebounce(filterWeights, 800);
   const [isRecalculating, setIsRecalculating] = useState(false);
-
+  const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
   const {state} = useSidebar();
   const isCollapsed = state === "collapsed"
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
   // Temporary button state
   const [isToggled, setIsToggled] = useState(false);
   const {routes: routeResults, loading: routeLoading, getItinerariesAndScore, getScore, setRoutes } = useItineraryData()
@@ -218,7 +261,102 @@ export function AppSidebarSearch({ options, loading, debouncedFetch, setOptions,
     (async () => {
       try {
         const newScores = await getScore(itinerariesPayload, filtersForBackend);
-        setRoutes(newScores);
+
+        //FOR THE LOVE OF ALL THAT IS HOLY DO NOT REPLICATE THIS PATCHJOB
+        //==============================================================
+        const processedScores = {
+          ...newScores,
+
+        best: newScores.best.map((r) => {
+            const mode = r.itinerary.mode.toLowerCase();
+            const data = r.itinerary.data;
+
+            const updatedLegs = data.legs.map((leg) => {
+              if (leg.mode === "WALK" && "nearestCarpark" in data && mode.includes("drive")) {
+                const driveData = data as DrivingItineraryData;
+                return {
+                  ...leg,
+                  description: `Walk from${
+                    driveData.nearestCarpark?.name ?? "nearest carpark"
+                  } to ${endValue?.SEARCHVAL ?? "Destination"} (${(
+                    leg.distance / 1000
+                  ).toFixed(2)} km)`,
+                };
+              } else if (leg.mode === "WALK" && mode.includes("walk")) {
+                return {
+                  ...leg,
+                  description: `Walk from ${startValue?.SEARCHVAL ?? "Origin"} to ${
+                    endValue?.SEARCHVAL ?? "Destination"
+                  } (${(leg.distance / 1000).toFixed(2)} km)`,
+                };
+              }
+              return leg;
+            });
+
+            return {
+              ...r,
+              itinerary: {
+                ...r.itinerary,
+                data: {
+                  ...data,
+                  legs: updatedLegs,
+                },
+              },
+            };
+          }),
+
+          driving: newScores.driving.map((r) => {
+            const data = r.itinerary.data;
+            return {
+              ...r,
+              itinerary: {
+                ...r.itinerary,
+                data: {
+                  ...data,
+                  legs: data.legs.map((leg) => ({
+                    ...leg,
+                    description:
+                      leg.mode === "WALK"
+                        ? `Walk from ${
+                            "nearestCarpark" in data
+                              ? (data as DrivingItineraryData).nearestCarpark?.name ?? "nearest carpark"
+                              : "nearest carpark"
+                          } to ${endValue?.SEARCHVAL ?? "Destination"} (${(
+                            leg.distance / 1000
+                          ).toFixed(2)} km)`
+                        : leg.description,
+                  })),
+                },
+              },
+            };
+          }),
+
+          walking: newScores.walking.map((r) => {
+            const data = r.itinerary.data;
+            return {
+              ...r,
+              itinerary: {
+                ...r.itinerary,
+                data: {
+                  ...data,
+                  legs: data.legs.map((leg) => ({
+                    ...leg,
+                    description:
+                      leg.mode === "WALK"
+                        ? `Walk from ${startValue?.SEARCHVAL ?? "Origin"} to ${
+                            endValue?.SEARCHVAL ?? "Destination"
+                          } (${(leg.distance / 1000).toFixed(2)} km)`
+                        : leg.description,
+                  })),
+                },
+              },
+            };
+          }),
+        };
+
+        setRoutes(processedScores);
+//==============================================================
+
       } catch (err) {
         console.error("Error updating scores:", err);
       } finally {
@@ -497,40 +635,58 @@ export function AppSidebarSearch({ options, loading, debouncedFetch, setOptions,
             <div className="px-2 pt-4">
 
               {/* where the search is actually triggered ===================================*/}
-              <Button
-                className="w-full cursor-pointer"
-                variant="outline"
-                disabled={routeLoading}
-                onClick={async () => {
-                  if (!startValue || !endValue) {
-                    alert("Please select both start and end points first.")
-                    return
-                  }
+<Button
+  className="w-full cursor-pointer"
+  variant="outline"
+  disabled={routeLoading}
+  onClick={async () => {
+    if (!startValue || !endValue) {
+      alert("Please select both start and end points first.");
+      return;
+    }
 
-                  const filters = {
-                    durationWeight: filterWeights["time-taken"],
-                    walkingDistanceWeight: filterWeights["amount-of-walking"],
-                    noTransferWeight: filterWeights["number-of-transfers"],
-                    carparkAvailabilityWeight: filterWeights["carpark-availability"],
-                    busWaitTimeWeight: filterWeights["bus-wait-time"],
-                    platformDensityWeight: filterWeights["crowd-level"],
-                    fareWeight: filterWeights["fare-cost"],
-                  }
+    // Reset old error message
+    setErrorMessage(null);
 
-                  try {
-                    const result = await getItinerariesAndScore(
-                      [parseFloat(startValue.LATITUDE), parseFloat(startValue.LONGITUDE)],
-                      [parseFloat(endValue.LATITUDE), parseFloat(endValue.LONGITUDE)],
-                      filters
-                    )
-                    console.log("Received itineraries:", result)
-                  } catch (err) {
-                    console.error("Error fetching routes:", err)
-                  }
-                }}
-              >
-                {routeLoading ? "Fetching Routes..." : "Get Routes"}
-              </Button>
+    const filters = {
+      durationWeight: filterWeights["time-taken"],
+      walkingDistanceWeight: filterWeights["amount-of-walking"],
+      noTransferWeight: filterWeights["number-of-transfers"],
+      carparkAvailabilityWeight: filterWeights["carpark-availability"],
+      busWaitTimeWeight: filterWeights["bus-wait-time"],
+      platformDensityWeight: filterWeights["crowd-level"],
+      fareWeight: filterWeights["fare-cost"],
+    };
+
+    try {
+        const result = await getItinerariesAndScore(
+          [parseFloat(startValue.LATITUDE), parseFloat(startValue.LONGITUDE)],
+          [parseFloat(endValue.LATITUDE), parseFloat(endValue.LONGITUDE)],
+          startValue.SEARCHVAL,
+          endValue.SEARCHVAL,
+          filters
+        );
+
+        // Handle invalid or empty responses
+        if (
+          !result ||
+          (!result.best?.length &&
+          !result.driving?.length &&
+          !result.public?.length &&
+          !result.walking?.length)
+        ) {
+          setErrorMessage("No possible routes found. Please try another location.");
+        }
+
+      } catch (err) {
+        console.error("Error fetching routes:", err);
+        setErrorMessage("No possible routes found. Please try another location.");
+      }
+    }}
+  >
+    {routeLoading ? "Fetching Routes..." : "Get Routes"}
+  </Button>
+
               {/* end of where the search is actually triggered ===================================*/}
 
 
@@ -550,45 +706,65 @@ export function AppSidebarSearch({ options, loading, debouncedFetch, setOptions,
 
 
           {!isCollapsed && (
-            routeResults ? (
-              (
-                  selectedMode === "best"
-                  ? routeResults.best
-                  : selectedMode === "drive"
-                  ? routeResults.driving
-                  : selectedMode === "public"
-                  ? routeResults.public
-                  : routeResults.walking
-              )?.map((r, idx) => (
-                <div
-                  key={`${selectedMode}-${idx}`}
-                  onClick={() => handleRouteClick(r.itinerary)} //the clickable portion
-                >
-                  <RouteCard
-                    route={{
-                      name: r.itinerary.data.name,
-                      distance: (r.itinerary.data.totalDistance ?? 0) / 1000,
-                      time: Math.round((r.itinerary.data.totalDuration ?? 0) / 60),
-                      score: r.score ?? 0,
-                      type: r.itinerary.mode as "best" | "drive" | "public" | "walk",
-                    }}
-                    
-                  />
-                </div>
-              ))
-            ) : (routeLoading || isRecalculating) ? (
-              <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
-                <Loader2 className="h-6 w-6 animate-spin mb-2 text-blue-500" />
-                <p className="text-sm">
-                  {routeLoading ? "Fetching routes..." : "Recalculating scores..."}
-                </p>
-              </div>
-            ) : (
-              <p className="text-muted-foreground text-sm px-3 py-2">
-                No routes yet. Click “Get Routes” to fetch available options.
-              </p>
-            )
-          )}
+              <>
+                {routeLoading || isRecalculating ? (
+                  <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
+                    <Loader2 className="h-6 w-6 animate-spin mb-2 text-blue-500" />
+                    <p className="text-sm">
+                      {routeLoading ? "Fetching routes..." : "Recalculating scores..."}
+                    </p>
+                  </div>
+                ) : errorMessage ? (
+                  <div className="flex flex-col items-center justify-center py-8 text-center text-red-400">
+                    <DatabaseIcon className="h-8 w-8 mb-2" />
+                    <p className="text-sm">{errorMessage}</p>
+                  </div>
+                ) : routeResults && (
+                  (
+                    selectedMode === "best"
+                      ? routeResults.best
+                      : selectedMode === "drive"
+                      ? routeResults.driving
+                      : selectedMode === "public"
+                      ? routeResults.public
+                      : routeResults.walking
+                  )?.length > 0 ? (
+                    (
+                      selectedMode === "best"
+                        ? routeResults.best
+                        : selectedMode === "drive"
+                        ? routeResults.driving
+                        : selectedMode === "public"
+                        ? routeResults.public
+                        : routeResults.walking
+                    )?.map((r, idx) => (
+                      <RouteCard
+                        key={`${selectedMode}-${idx}`}
+                        expanded={expandedIndex === idx}
+                        onClick={() => {
+                          setExpandedIndex(expandedIndex === idx ? null : idx);
+                          handleRouteClick(r.itinerary);
+                        }}
+                        route={{
+                          name: r.itinerary.data.name,
+                          distance: (r.itinerary.data.totalDistance ?? 0) / 1000,
+                          time: Math.round((r.itinerary.data.totalDuration ?? 0) / 60),
+                          score: r.score ?? 0,
+                          type: r.itinerary.mode as "best" | "drive" | "public" | "walk",
+                          legs: r.itinerary.data.legs,
+                        }}
+                      />
+                    ))
+                  ) : (
+                    <p className="text-muted-foreground text-sm px-3 py-2">
+                      No routes yet. Click “Get Routes” to fetch available options.
+                    </p>
+                  )
+                )}
+              </>
+            )}
+
+
 
 
 
