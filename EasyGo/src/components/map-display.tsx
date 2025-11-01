@@ -13,7 +13,7 @@ export interface MapDisplayHandle {
 
 // 1. Define the props interface to accept the functions
 interface MapDisplayProps {
-  setLayoutInURL: (layout: "search" | "default" | "route") => void;
+  setLayoutInURL: (layout: "default" | "search" | "routes" | "signup" | "login" | "profile") => void;
   setStartValue: (value: OneMapSearchResult) => void;
   setEndValue: (value: OneMapSearchResult) => void;
 }

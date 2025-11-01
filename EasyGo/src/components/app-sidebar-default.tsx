@@ -27,7 +27,7 @@ export function AppSidebarDefault({ ...props }: React.ComponentProps<typeof Side
           <SidebarMenu>
             <SidebarMenuItem>
               <SidebarMenuButton asChild>
-                <a href="#">
+                <a href="?layout=routes">
                   <Bookmark className="mr-2 h-4 w-4" />
                   <span>Saved Routes</span>
                 </a>

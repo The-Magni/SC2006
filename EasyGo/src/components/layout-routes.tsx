@@ -1,6 +1,6 @@
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { Separator } from "@/components/ui/separator";
-import { AppSidebarDefault } from "@/components/app-sidebar-default";
+import { AppSidebarRoutes } from "@/components/app-sidebar-routes";
 import Autocomplete from "@mui/material/Autocomplete";
 import TextField from "@mui/material/TextField";
 import InputAdornment from '@mui/material/InputAdornment';
@@ -14,7 +14,7 @@ const MapDisplay = dynamic(() => import("@/components/map-display"), {
   ssr: false,
 });
 
-type LayoutDefaultProps = {
+type LayoutRoutesProps = {
   options: OneMapSearchResult[];
   loading: boolean;
   debouncedFetch: (value: string) => void;
@@ -26,7 +26,7 @@ type LayoutDefaultProps = {
 };
 
 
-export default function LayoutDefault(
+export default function LayoutRoutes(
   {
     options,
     loading,
@@ -36,7 +36,7 @@ export default function LayoutDefault(
     setStartValue,
     setEndValue,
     mapRef
-  }: LayoutDefaultProps
+  }: LayoutRoutesProps
 ) {
   return (
     <SidebarProvider
@@ -46,7 +46,7 @@ export default function LayoutDefault(
         } as React.CSSProperties
       }
     >
-      <AppSidebarDefault />
+      <AppSidebarRoutes />
       <SidebarInset>
         <header className="flex h-16 shrink-0 items-center gap-2 px-4 border-b border-neutral-800 bg-[#121212]">
           <SidebarTrigger className="-ml-1" />
