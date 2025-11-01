@@ -6,7 +6,7 @@ export class PublicItinerary extends BaseItinerary {
   busWaitTime: number;
   platformDensity: number;
   // summary: string;
- 
+
   constructor(legs: RouteLeg[]) {
     super(legs, "pt")
     this.userMode = "pt"

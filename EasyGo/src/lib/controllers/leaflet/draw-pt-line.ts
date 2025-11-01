@@ -5,21 +5,49 @@ export async function drawPublicRoute(map: L.Map, data: PublicItineraryData): Pr
     const L = await getLeaflet();
     if (!L) return;
 
-    const colors = ["#007AFF", "#34C759", "#AF52DE", "#FF9500", "#FF2D55"];
+  // Default cycling colors for non-MRT modes
+    const defaultColors = ["#007AFF", "#34C759", "#AF52DE", "#FF9500"];
+
+  // MRT line colors (based on LTA official palette)
+    const mrtColors: Record<string, string> = {
+        NS: "#D42A2F", // North South - Red
+        EW: "#009645", // East West - Green
+        NE: "#9900AA", // North East - Purple
+        CC: "#FA9E0D", // Circle - Yellow/Orange
+        DT: "#005EC4", // Downtown - Blue
+        TE: "#9D5B25", // Thomson-East Coast - Brown
+        BP: "#748477", // Bukit Panjang LRT - Grey
+        SE: "#748477", // Sengkang LRT - Grey
+        PE: "#748477", // Punggol LRT - Grey
+    };
+
     const allPoints: [number, number][] = [];
 
     data.legs.forEach((leg, i) => {
-        const color = colors[i % colors.length];
-        const points = leg.geometry.map(p => [p.lat, p.lng]) as [number, number][];
-        allPoints.push(...points);
+    // Determine color
+    let color = defaultColors[i % defaultColors.length];
 
-        const poly = L.polyline(points, { color, weight: 4 }).addTo(map);
+    // If it's a train leg, check if line code (e.g., NS, EW) appears in description or name
+    if (leg.mode === "SUBWAY") {
+        const lineMatch = leg.description.match(/\b(NS|EW|NE|CC|DT|TE|BP|SE|PE)\b/);
+        if (lineMatch) {
+        const lineCode = lineMatch[1] as keyof typeof mrtColors;
+        if (mrtColors[lineCode]) {
+            color = mrtColors[lineCode];
+        }
+        }
+    }
 
-        // --- Compute segment midpoint ---
-        const midIndex = Math.floor(points.length / 2);
-        const midpoint = points[midIndex] || points[0];
+    const points = leg.geometry.map((p) => [p.lat, p.lng]) as [number, number][];
+    allPoints.push(...points);
 
-        const legPopup = L.popup({
+    const poly = L.polyline(points, { color, weight: 4 }).addTo(map);
+
+    // Compute segment midpoint
+    const midIndex = Math.floor(points.length / 2);
+    const midpoint = points[midIndex] || points[0];
+
+    const legPopup = L.popup({
         autoClose: false,
         closeOnClick: false,
         closeButton: false,
@@ -37,6 +65,7 @@ export async function drawPublicRoute(map: L.Map, data: PublicItineraryData): Pr
 
         map.addLayer(legPopup);
 
+        // Transfer markers between legs
         if (i < data.legs.length - 1) {
         const nextLeg = data.legs[i + 1];
         const transferPoint = leg.geometry[leg.geometry.length - 1];
@@ -48,9 +77,7 @@ export async function drawPublicRoute(map: L.Map, data: PublicItineraryData): Pr
             fillOpacity: 1,
             }).addTo(map);
 
-            const transferPopup = L.popup({
-
-            })
+            const transferPopup = L.popup()
             .setLatLng([transferPoint.lat, transferPoint.lng])
             .setContent(
                 `<div style="font-size:13px; line-height:1.3;">
@@ -59,11 +86,13 @@ export async function drawPublicRoute(map: L.Map, data: PublicItineraryData): Pr
                 </div>`
             );
 
-            //map.addLayer(transferPopup);
+            // Optional: uncomment to show transfer popups by default
+            // map.addLayer(transferPopup);
         }
         }
     });
 
+    // Add start and destination markers
     const firstLeg = data.legs[0];
     const lastLeg = data.legs[data.legs.length - 1];
     if (firstLeg?.geometry.length) {
@@ -72,7 +101,10 @@ export async function drawPublicRoute(map: L.Map, data: PublicItineraryData): Pr
         color: "#007AFF",
         fillColor: "#007AFF",
         fillOpacity: 0.8,
-        }).addTo(map).bindPopup("<b>Start of Journey</b>").openPopup();
+        })
+        .addTo(map)
+        .bindPopup("<b>Start of Journey</b>")
+        .openPopup();
     }
     if (lastLeg?.geometry.length) {
         const end = lastLeg.geometry[lastLeg.geometry.length - 1];
@@ -81,8 +113,11 @@ export async function drawPublicRoute(map: L.Map, data: PublicItineraryData): Pr
         color: "#ff3b30",
         fillColor: "#ff3b30",
         fillOpacity: 0.8,
-        }).addTo(map).bindPopup("<b>Destination</b>").openPopup();
+        })
+        .addTo(map)
+        .bindPopup("<b>Destination</b>")
+        .openPopup();
     }
 
     if (allPoints.length > 0) map.fitBounds(allPoints, { padding: [40, 40] });
-    }
+}
