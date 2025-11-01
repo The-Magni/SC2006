@@ -40,7 +40,10 @@ export async function getRoute(
 
     }
 
-    const res = await fetch(url)
+    const res = await fetch(url, {
+        method: 'GET',
+        credentials: 'include'
+    });
     if (!res.ok) {
         const errText = await res.text()
         console.error(`OneMap API failed: ${res.status} →`, errText)
