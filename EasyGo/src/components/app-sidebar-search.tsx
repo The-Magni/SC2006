@@ -37,7 +37,7 @@ type SidebarSearchProps = {
   // Add new typing for routing data @John
 };
 
-// This is sample data.
+// This is sample data.D
 const data = {
   user: {
     name: "shadcn",
@@ -392,6 +392,50 @@ export function AppSidebarSearch({ options, loading, debouncedFetch, setOptions,
     mapRef.current.clearPolylines();
     drawItineraryLine(map, itinerary.mode, itinerary.data);
   };
+  // 🟦 Auto search trigger when both start and end are chosen
+const handleAutoSearch = async (start: OneMapSearchResult, end: OneMapSearchResult) => {
+  try {
+    setErrorMessage(null);
+
+    const filters = {
+      durationWeight: filterWeights["time-taken"],
+      walkingDistanceWeight: filterWeights["amount-of-walking"],
+      noTransferWeight: filterWeights["number-of-transfers"],
+      carparkAvailabilityWeight: filterWeights["carpark-availability"],
+      busWaitTimeWeight: filterWeights["bus-wait-time"],
+      platformDensityWeight: filterWeights["crowd-level"],
+      fareWeight: filterWeights["fare-cost"],
+    };
+
+    const result = await getItinerariesAndScore(
+      [parseFloat(start.LATITUDE), parseFloat(start.LONGITUDE)],
+      [parseFloat(end.LATITUDE), parseFloat(end.LONGITUDE)],
+      start.SEARCHVAL,
+      end.SEARCHVAL,
+      filters
+    );
+
+    if (
+      !result ||
+      (!result.best?.length &&
+        !result.driving?.length &&
+        !result.public?.length &&
+        !result.walking?.length)
+    ) {
+      setErrorMessage("No possible routes found. Please try another location.");
+      setRoutes({ best: [], driving: [], public: [], walking: [] });
+      mapRef?.current?.clearPolylines?.();
+      return;
+    }
+
+    setRoutes(result);
+  } catch (err) {
+    console.error("Error fetching routes:", err);
+    setErrorMessage("No possible routes found. Please try another location.");
+    setRoutes({ best: [], driving: [], public: [], walking: [] });
+    mapRef?.current?.clearPolylines?.();
+  }
+};
 
   return (
     <Sidebar
@@ -460,14 +504,17 @@ export function AppSidebarSearch({ options, loading, debouncedFetch, setOptions,
                   }}
 
                   // Uses mapRef from map display to get long lat to pan to
-                  onChange={(event, newValue) => {
+                  onChange={async (event, newValue) => {
                     if (newValue && typeof newValue !== "string") {
-                      // const lat = parseFloat(newValue.LATITUDE)
-                      // const lng = parseFloat(newValue.LONGITUDE)
+                      setStartValue(newValue);
 
-                      setStartValue(newValue)
+                      // 🟦 Trigger auto search if endValue already chosen
+                      if (endValue) {
+                        await handleAutoSearch(newValue, endValue);
+                      }
                     }
                   }}
+
 
                   // Formats the output of the dropdown list from the OneMapSearchResult type
                   renderOption={(props, option) => {
@@ -556,14 +603,17 @@ export function AppSidebarSearch({ options, loading, debouncedFetch, setOptions,
                   }}
 
                   // Uses mapRef from map display to get long lat to pan to
-                  onChange={(event, newValue) => {
+                  onChange={async (event, newValue) => {
                     if (newValue && typeof newValue !== "string") {
-                      // const lat = parseFloat(newValue.LATITUDE)
-                      // const lng = parseFloat(newValue.LONGITUDE)
+                      setEndValue(newValue);
 
-                      setEndValue(newValue)
+                      // 🟦 Trigger auto search if startValue already chosen
+                      if (startValue) {
+                        await handleAutoSearch(startValue, newValue);
+                      }
                     }
                   }}
+
 
                   // Formats the output of the dropdown list from the OneMapSearchResult type
                   renderOption={(props, option) => {
@@ -647,71 +697,7 @@ export function AppSidebarSearch({ options, loading, debouncedFetch, setOptions,
               </div>
             )}
 
-            {!isCollapsed && (
-              <div className="px-2 pt-4">
-              {/* where the search is actually triggered ===================================*/}
-                <Button
-                  className="w-full cursor-pointer"
-                  variant="outline"
-                  disabled={routeLoading}
-                  onClick={async () => {
-                    if (!startValue || !endValue) {
-                      alert("Please select both start and end points first.");
-                      return;
-                    }
 
-                    // Reset old error message
-                    setErrorMessage(null);
-
-                    const filters = {
-                      durationWeight: filterWeights["time-taken"],
-                      walkingDistanceWeight: filterWeights["amount-of-walking"],
-                      noTransferWeight: filterWeights["number-of-transfers"],
-                      carparkAvailabilityWeight: filterWeights["carpark-availability"],
-                      busWaitTimeWeight: filterWeights["bus-wait-time"],
-                      platformDensityWeight: filterWeights["crowd-level"],
-                      fareWeight: filterWeights["fare-cost"],
-                    };
-
-                    try {
-                        const result = await getItinerariesAndScore(
-                          [parseFloat(startValue.LATITUDE), parseFloat(startValue.LONGITUDE)],
-                          [parseFloat(endValue.LATITUDE), parseFloat(endValue.LONGITUDE)],
-                          startValue.SEARCHVAL,
-                          endValue.SEARCHVAL,
-                          filters
-                        );
-
-                        // Handle invalid or empty responses
-                        if (
-                          !result ||
-                          (!result.best?.length &&
-                          !result.driving?.length &&
-                          !result.public?.length &&
-                          !result.walking?.length)
-                        ) {
-                          setErrorMessage("No possible routes found. Please try another location.");
-                          setRoutes({ best: [], driving: [], public: [], walking: [] });
-                        }
-
-                      } catch (err) {
-                        console.error("Error fetching routes:", err);
-                        setErrorMessage("No possible routes found. Please try another location.");
-                        setRoutes({ best: [], driving: [], public: [], walking: [] });
-                        return; 
-                      }
-                    }}
-                      >
-                    {routeLoading ? "Fetching Routes..." : "Get Routes"}
-                  </Button>
-                    {errorMessage && (
-                      <div className="flex flex-col items-center justify-center py-8 text-center text-red-400">
-                        <DatabaseIcon className="h-8 w-8 mb-2" />
-                        <p className="text-sm">{errorMessage}</p>
-                      </div>
-                    )}
-              {/* end of where the search is actually triggered ===================================*/}
-            </div>)}
           </SidebarGroupContent>
         </SidebarGroup>
                     
