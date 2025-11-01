@@ -4,7 +4,6 @@ import * as React from "react"
 import { RefObject, useState, useEffect } from "react";
 import { Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarRail, useSidebar } from "@/components/ui/sidebar"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
-import { Card, CardAction, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider"
@@ -17,14 +16,12 @@ import type { MapDisplayHandle } from "@/components/map-display";
 import { ConvenienceFilter, GetItinerariesResponse, useItineraryData } from "@/hooks/itinerary-data"
 import { useDebounce } from "use-debounce"
 
-//polyline drawing imports
+// Polyline drawing imports
 import { drawDrivingRoute } from "@/lib/controllers/leaflet/draw-driving-line";
 import { drawPublicRoute } from "@/lib/controllers/leaflet/draw-pt-line";
 import { drawWalkingRoute } from "@/lib/controllers/leaflet/draw-walking-line";
 import { BaseItineraryData, DrivingItineraryData, ItineraryData, PublicItineraryData, WalkingItineraryData } from "@/lib/controllers/Parser";
 import { drawItineraryLine } from "@/lib/controllers/leaflet/leaflethelper-controller";
-
-
 
 type SidebarSearchProps = {
   options: OneMapSearchResult[];
@@ -85,6 +82,10 @@ const filterConfig = {
   ]
 } as const;
 
+
+
+
+
 // Initialize filter weights for all filter IDs
 const initialFilterWeights: Record<string, number> = Object.keys(filterConfig).reduce(
   (acc, mode) => ({
@@ -114,89 +115,108 @@ const FilterItem = ({ label, value, onValueChange }: { label: string; value: num
 
 const getRouteIcon = (type: string): LucideIcon => {
   switch (type) {
-    case 'drive':
+    case 'DrivingItinerary':
       return Car;
-    case 'public':
+    case 'PublicItinerary':
       return Bus;
-    case 'walk':
+    case 'SimpleWalkingItinerary':
       return Footprints;
     default:
       return MapPinIcon; // Fallback icon
   }
 };
 
+type Leg = {
+  mode: string;
+  duration: number;
+  distance: number;
+  description: string;
+}
+
 // Reusable RouteCard component to reduce repetition
 const RouteCard = ({
   route,
-  onClick,
-  expanded,
+  onClick
 }: {
   route: {
+    value: string;
     name: string;
     distance: number;
     time: number;
     score: number;
     type: string;
-    legs?: { distance: number; description: string }[];
+    legs: Leg[];
   };
-  onClick?: () => void;
-  expanded: boolean;
+  onClick: () => void;
 }) => {
   const RouteIcon = getRouteIcon(route.type);
 
   return (
-    <div className="px-1 pt-4">
-      <Card
-        className={`cursor-pointer transition-all hover:shadow-md ${
-          expanded ? "border-blue-500 shadow-blue-500/30" : ""
-        }`}
-        onClick={onClick}
-      >
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center">
-              <RouteIcon className="h-5 w-5 mr-2 text-blue-400" />
-              <CardTitle className="text-base">{route.name}</CardTitle>
-            </div>
+    <AccordionItem
+      value={route.value}
+      className="rounded-md border!"
+      onClick={onClick}
+    >
+      {/* This is the trigger, it shows the summary.
+        The [data-state=open] selector ensures the corners round correctly when open.
+      */}
+      <AccordionTrigger className="flex p-4 hover:no-underline">
 
+        <div className="flex w-full items-center gap-3 text-left">
+          {/* Icon */}
+          <span className="flex h-10 w-10 items-center justify-center rounded-full bg-muted">
+            <RouteIcon className="h-5 w-5" />
+          </span>
+
+          {/* Title & Stats */}
+          <div className="flex-1">
+            <h4 className="font-semibold">{route.name}</h4>
+            <p className="text-sm text-muted-foreground">
+              {route.time} min ({route.distance} km)
+            </p>
           </div>
-          <CardDescription>
-            {(route.distance || 0).toFixed(2)} km • {route.time} min
-          </CardDescription>
-        </CardHeader>
 
-        <CardContent>
-          <p>Convenience Score: {route.score}</p>
-
-          {/* Expanded details */}
-          {expanded && (
-            <div className="mt-3 border-t border-gray-700 pt-3 text-sm text-gray-300 animate-in fade-in duration-300">
-              <p className="mb-2">
-                <b>Route Legs:</b>
-              </p>
-
-              {route.legs && route.legs.length > 0 ? (
-                <ul className="space-y-2 list-disc list-inside text-gray-400">
-                  {route.legs.map((leg, i) => (
-                    <li key={i}>
-                      <b>Leg {i + 1}:</b> {leg.description} <br />
-                      <span className="text-xs text-gray-500">
-                        Distance: {(leg.distance / 1000).toFixed(2)} km
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <p>No leg details available.</p>
-              )}
+          {/* Score */}
+          <div className="flex flex-col items-end gap-2 pl-2">
+            <div className="flex items-center gap-1 rounded-full bg-yellow-400/20 px-2 py-0.5 text-yellow-300">
+              <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+              <span className="text-xs font-semibold">{route.score.toFixed(1)}</span>
             </div>
-          )}
-        </CardContent>
-      </Card>
-    </div>
+          </div>
+        </div>
+      </AccordionTrigger>
+
+      {/* This is the content, it shows the step-by-step details.
+      */}
+      <AccordionContent className="p-0">
+        {/* Start Pin */}
+        <div className="flex items-center gap-6 ml-7 mb-2">
+          <Circle className="h-4 w-4 text-white" />
+          <h4 className="font-semibold">Start</h4>
+        </div>
+
+        {/* Itinerary Legs */}
+        {route.legs.map((leg, index) => (
+          <div key={index} className="ml-8.5 px-8 py-3 border-l-2 border-l-blue-500">
+            <div
+              className="text-sm font-medium"
+              dangerouslySetInnerHTML={{ __html: leg.description }}
+            />
+            <p className="text-sm text-muted-foreground">
+              {leg.distance > 0 ? `${(leg.distance / 1000).toFixed(1)} km` : ""}
+            </p>
+          </div>
+        ))}
+
+        {/* End Pin */}
+        <div className="flex items-center gap-6 ml-7 mt-2 mb-4">
+          <MapPinIcon className="h-4 w-4 text-white" />
+          <h4 className="font-semibold">End</h4>
+        </div>
+      </AccordionContent>
+    </AccordionItem>
   );
 };
-
 
 
 // Add routing data prop @John
@@ -236,7 +256,7 @@ export function AppSidebarSearch({ options, loading, debouncedFetch, setOptions,
     if (!routeResults) return;
     if (!startValue || !endValue) return;
     if (JSON.stringify(prevFilters.current) === JSON.stringify(debouncedFilters)) {
-      return; // if no change, dont spam the api
+      return; // If no change, don't spam the API
     }
       prevFilters.current = debouncedFilters; 
       const controller = new AbortController();
@@ -369,11 +389,11 @@ export function AppSidebarSearch({ options, loading, debouncedFetch, setOptions,
   }, [debouncedFilters, routeResults, startValue, endValue, getScore, setRoutes]);
   
     // Handle route card click to draw polyline on map
-    const handleRouteClick = (itinerary: ItineraryData<BaseItineraryData>) => {
-  if (!mapRef?.current?.map) return;
-  const map = mapRef.current.map;
-  mapRef.current.clearPolylines();
-  drawItineraryLine(map, itinerary.mode, itinerary.data);
+  const handleRouteClick = (itinerary: ItineraryData<BaseItineraryData>) => {
+    if (!mapRef?.current?.map) return;
+    const map = mapRef.current.map;
+    mapRef.current.clearPolylines();
+    drawItineraryLine(map, itinerary.mode, itinerary.data);
   };
 
 
@@ -631,70 +651,75 @@ export function AppSidebarSearch({ options, loading, debouncedFetch, setOptions,
               </div>
             )}
 
-            {/* Temporary Button */}
-            <div className="px-2 pt-4">
-
+            {!isCollapsed && (
+              <div className="px-2 pt-4">
               {/* where the search is actually triggered ===================================*/}
-<Button
-  className="w-full cursor-pointer"
-  variant="outline"
-  disabled={routeLoading}
-  onClick={async () => {
-    if (!startValue || !endValue) {
-      alert("Please select both start and end points first.");
-      return;
-    }
+                <Button
+                  className="w-full cursor-pointer"
+                  variant="outline"
+                  disabled={routeLoading}
+                  onClick={async () => {
+                    if (!startValue || !endValue) {
+                      alert("Please select both start and end points first.");
+                      return;
+                    }
 
-    // Reset old error message
-    setErrorMessage(null);
+                    // Reset old error message
+                    setErrorMessage(null);
 
-    const filters = {
-      durationWeight: filterWeights["time-taken"],
-      walkingDistanceWeight: filterWeights["amount-of-walking"],
-      noTransferWeight: filterWeights["number-of-transfers"],
-      carparkAvailabilityWeight: filterWeights["carpark-availability"],
-      busWaitTimeWeight: filterWeights["bus-wait-time"],
-      platformDensityWeight: filterWeights["crowd-level"],
-      fareWeight: filterWeights["fare-cost"],
-    };
+                    const filters = {
+                      durationWeight: filterWeights["time-taken"],
+                      walkingDistanceWeight: filterWeights["amount-of-walking"],
+                      noTransferWeight: filterWeights["number-of-transfers"],
+                      carparkAvailabilityWeight: filterWeights["carpark-availability"],
+                      busWaitTimeWeight: filterWeights["bus-wait-time"],
+                      platformDensityWeight: filterWeights["crowd-level"],
+                      fareWeight: filterWeights["fare-cost"],
+                    };
 
-    try {
-        const result = await getItinerariesAndScore(
-          [parseFloat(startValue.LATITUDE), parseFloat(startValue.LONGITUDE)],
-          [parseFloat(endValue.LATITUDE), parseFloat(endValue.LONGITUDE)],
-          startValue.SEARCHVAL,
-          endValue.SEARCHVAL,
-          filters
-        );
+                    try {
+                        const result = await getItinerariesAndScore(
+                          [parseFloat(startValue.LATITUDE), parseFloat(startValue.LONGITUDE)],
+                          [parseFloat(endValue.LATITUDE), parseFloat(endValue.LONGITUDE)],
+                          startValue.SEARCHVAL,
+                          endValue.SEARCHVAL,
+                          filters
+                        );
 
-        // Handle invalid or empty responses
-        if (
-          !result ||
-          (!result.best?.length &&
-          !result.driving?.length &&
-          !result.public?.length &&
-          !result.walking?.length)
-        ) {
-          setErrorMessage("No possible routes found. Please try another location.");
-        }
+                        // Handle invalid or empty responses
+                        if (
+                          !result ||
+                          (!result.best?.length &&
+                          !result.driving?.length &&
+                          !result.public?.length &&
+                          !result.walking?.length)
+                        ) {
+                          setErrorMessage("No possible routes found. Please try another location.");
+                          setRoutes({ best: [], driving: [], public: [], walking: [] });
+                          return;
+                        }
 
-      } catch (err) {
-        console.error("Error fetching routes:", err);
-        setErrorMessage("No possible routes found. Please try another location.");
-      }
-    }}
-  >
-    {routeLoading ? "Fetching Routes..." : "Get Routes"}
-  </Button>
-
+                      } catch (err) {
+                        console.error("Error fetching routes:", err);
+                        setErrorMessage("No possible routes found. Please try another location.");
+                        setRoutes({ best: [], driving: [], public: [], walking: [] });
+                        return; 
+                      }
+                    }}
+                      >
+                    {routeLoading ? "Fetching Routes..." : "Get Routes"}
+                  </Button>
+                    {errorMessage && (
+                      <div className="flex flex-col items-center justify-center py-8 text-center text-red-400">
+                        <DatabaseIcon className="h-8 w-8 mb-2" />
+                        <p className="text-sm">{errorMessage}</p>
+                      </div>
+                    )}
               {/* end of where the search is actually triggered ===================================*/}
-
-
-              
-            </div>
+            </div>)}
           </SidebarGroupContent>
         </SidebarGroup>
-
+                    
         {!isCollapsed && (
           <Separator />
         )}
@@ -703,69 +728,66 @@ export function AppSidebarSearch({ options, loading, debouncedFetch, setOptions,
           <SidebarGroupLabel>Routes</SidebarGroupLabel>
 
           <SidebarGroupContent>
+              {!isCollapsed && (
+                <>
+                  {/* ——— Loader / No Routes ——— */}
+                  {(routeLoading || isRecalculating) ? (
+                    <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
+                      <Loader2 className="h-6 w-6 animate-spin mb-2 text-blue-500" />
+                      <p className="text-sm">
+                        {routeLoading ? "Fetching routes..." : "Recalculating scores..."}
+                      </p>
+                    </div>
 
+                  ) : routeResults ? (
+                    (() => {
+                      const currentRoutes =
+                        selectedMode === "best"
+                          ? routeResults.best
+                          : selectedMode === "drive"
+                            ? routeResults.driving
+                            : selectedMode === "public"
+                              ? routeResults.public
+                              : routeResults.walking;
 
-          {!isCollapsed && (
-              <>
-                {routeLoading || isRecalculating ? (
-                  <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
-                    <Loader2 className="h-6 w-6 animate-spin mb-2 text-blue-500" />
-                    <p className="text-sm">
-                      {routeLoading ? "Fetching routes..." : "Recalculating scores..."}
-                    </p>
-                  </div>
-                ) : errorMessage ? (
-                  <div className="flex flex-col items-center justify-center py-8 text-center text-red-400">
-                    <DatabaseIcon className="h-8 w-8 mb-2" />
-                    <p className="text-sm">{errorMessage}</p>
-                  </div>
-                ) : routeResults && (
-                  (
-                    selectedMode === "best"
-                      ? routeResults.best
-                      : selectedMode === "drive"
-                      ? routeResults.driving
-                      : selectedMode === "public"
-                      ? routeResults.public
-                      : routeResults.walking
-                  )?.length > 0 ? (
-                    (
-                      selectedMode === "best"
-                        ? routeResults.best
-                        : selectedMode === "drive"
-                        ? routeResults.driving
-                        : selectedMode === "public"
-                        ? routeResults.public
-                        : routeResults.walking
-                    )?.map((r, idx) => (
-                      <RouteCard
-                        key={`${selectedMode}-${idx}`}
-                        expanded={expandedIndex === idx}
-                        onClick={() => {
-                          setExpandedIndex(expandedIndex === idx ? null : idx);
-                          handleRouteClick(r.itinerary);
-                        }}
-                        route={{
-                          name: r.itinerary.data.name,
-                          distance: (r.itinerary.data.totalDistance ?? 0) / 1000,
-                          time: Math.round((r.itinerary.data.totalDuration ?? 0) / 60),
-                          score: r.score ?? 0,
-                          type: r.itinerary.mode as "best" | "drive" | "public" | "walk",
-                          legs: r.itinerary.data.legs,
-                        }}
-                      />
-                    ))
+                      if (!currentRoutes?.length) {
+                        return (
+                          <p className="text-muted-foreground text-sm px-3 py-2">
+                            No routes found for this mode.
+                          </p>
+                        );
+                      }
+                      {/* ——— Accordion with RouteCards ——— */}
+                      return (
+                        <Accordion type="single" collapsible className="w-full space-y-3">
+                          {currentRoutes.map((r, idx) => (
+                            <RouteCard
+                              key={`${selectedMode}-route-${idx}`}
+                              route={{
+                                value: `${selectedMode}-route-${idx}`,
+                                name: r.itinerary.data.name,
+                                distance: (r.itinerary.data.totalDistance ?? 0) / 1000,
+                                time: Math.round((r.itinerary.data.totalDuration ?? 0) / 60),
+                                score: r.score ?? 0,
+                                type: r.itinerary.mode as
+                                  | "DrivingItinerary"
+                                  | "PublicItinerary"
+                                  | "SimpleWalkingItinerary",
+                                legs: r.itinerary.data.legs,
+                              }}
+                              onClick={() => handleRouteClick(r.itinerary)}
+                            />
+                          ))}
+                        </Accordion>
+                      );
+                    })()
                   ) : (
                     <p className="text-muted-foreground text-sm px-3 py-2">
                       No routes yet. Click “Get Routes” to fetch available options.
                     </p>
-                  )
-                )}
-              </>
-            )}
-
-
-
+                  )}
+                </>
+              )}
 
 
 

@@ -10,10 +10,11 @@ import LoginForm from "@/components/layout-login";
 import type { MapDisplayHandle } from "@/components/map-display";
 import debounce from "lodash/debounce"
 
+
 export default function Page() {
   const searchParams = useSearchParams()
   const router = useRouter()
-  const layout = searchParams.get("layout") || "default" // default if missing
+  const layout = searchParams.get("layout") || "default" // Default if missing
   const [startValue, setStartValue] = useState<OneMapSearchResult | null>(null)
   const [endValue, setEndValue] = useState<OneMapSearchResult | null>(null)
   const mapRef = useRef<MapDisplayHandle | null>(null)
@@ -64,7 +65,7 @@ export default function Page() {
   } else if (layout === "route") {
     return (
       <h1>TODO</h1>
-    )
+    );
   } else if (layout === "signup") {
     return (
       <SignupForm />
