@@ -5,8 +5,9 @@ import { useState, useMemo, useRef } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import LayoutDefault from "@/components/layout-default";
 import LayoutSearch from "@/components/layout-search";
-import SignupForm from "@/components/layout-signup";
-import LoginForm from "@/components/layout-login";
+import LayoutSignup from "@/components/layout-signup";
+import LayoutLogin from "@/components/layout-login";
+import LayoutProfile from "@/components/layout-profile";
 import type { MapDisplayHandle } from "@/components/map-display";
 import debounce from "lodash/debounce"
 
@@ -68,12 +69,16 @@ export default function Page() {
     );
   } else if (layout === "signup") {
     return (
-      <SignupForm />
+      <LayoutSignup />
     )
   } else if (layout === "login") {
     return (
-      <LoginForm />
+      <LayoutLogin />
     )
+  } else if (layout === "profile") {
+    return (
+      <LayoutProfile />
+    );
   } else {
     return (
       <LayoutDefault
