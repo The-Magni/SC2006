@@ -1,6 +1,5 @@
 import { getLeaflet } from "@/lib/controllers/leaflet/leaflet-client";
 import { DrivingItineraryData } from "@/lib/controllers/Parser";
-import { Itinerary } from "@/lib/deprecated/Itinerary";
 
 export async function drawDrivingRoute(map: L.Map, data: DrivingItineraryData) {
     const L = await getLeaflet();

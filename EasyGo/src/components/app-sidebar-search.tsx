@@ -17,10 +17,8 @@ import { ConvenienceFilter, GetItinerariesResponse, useItineraryData } from "@/h
 import { useDebounce } from "use-debounce"
 
 // Polyline drawing imports
-import { drawDrivingRoute } from "@/lib/controllers/leaflet/draw-driving-line";
-import { drawPublicRoute } from "@/lib/controllers/leaflet/draw-pt-line";
-import { drawWalkingRoute } from "@/lib/controllers/leaflet/draw-walking-line";
-import { BaseItineraryData, DrivingItineraryData, ItineraryData, PublicItineraryData, WalkingItineraryData } from "@/lib/controllers/Parser";
+
+import { BaseItineraryData, DrivingItineraryData, ItineraryData} from "@/lib/controllers/Parser";
 import { drawItineraryLine } from "@/lib/controllers/leaflet/leaflethelper-controller";
 
 type SidebarSearchProps = {
@@ -392,7 +390,6 @@ export function AppSidebarSearch({ options, loading, debouncedFetch, setOptions,
     mapRef.current.clearPolylines();
     drawItineraryLine(map, itinerary.mode, itinerary.data);
   };
-  // 🟦 Auto search trigger when both start and end are chosen
 const handleAutoSearch = async (start: OneMapSearchResult, end: OneMapSearchResult) => {
   try {
     setErrorMessage(null);
@@ -607,7 +604,6 @@ const handleAutoSearch = async (start: OneMapSearchResult, end: OneMapSearchResu
                     if (newValue && typeof newValue !== "string") {
                       setEndValue(newValue);
 
-                      // 🟦 Trigger auto search if startValue already chosen
                       if (startValue) {
                         await handleAutoSearch(startValue, newValue);
                       }
