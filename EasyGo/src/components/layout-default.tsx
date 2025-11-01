@@ -19,6 +19,7 @@ type LayoutDefaultProps = {
   loading: boolean;
   debouncedFetch: (value: string) => void;
   setLayoutInURL: (layout: "search" | "default" | "route") => void;
+  setStartValue: (value: OneMapSearchResult) => void;
   setEndValue: (value: OneMapSearchResult) => void;
   setOptions: React.Dispatch<React.SetStateAction<OneMapSearchResult[]>>;
   mapRef: RefObject<MapDisplayHandle | null>;
@@ -31,6 +32,7 @@ export default function LayoutDefault(
     debouncedFetch,
     setOptions,
     setLayoutInURL,
+    setStartValue,
     setEndValue,
     mapRef
   }: LayoutDefaultProps
@@ -142,7 +144,7 @@ export default function LayoutDefault(
         </header>
 
         <div className="flex flex-1 flex-col pt-0">
-          <MapDisplay ref={mapRef}/>
+          <MapDisplay ref={mapRef} setLayoutInURL={setLayoutInURL} setStartValue={setStartValue} setEndValue={setEndValue} />
         </div>
       </SidebarInset>
     </SidebarProvider>

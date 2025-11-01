@@ -73,7 +73,7 @@ export default function LayoutSearch(
         </header>
 
         <div className="flex flex-1 flex-col pt-0">
-          <MapDisplay ref={mapRef}/>
+          <MapDisplay ref={mapRef} setLayoutInURL={setLayoutInURL} setStartValue={setStartValue} setEndValue={setEndValue} />
         </div>
       </SidebarInset>
     </SidebarProvider>

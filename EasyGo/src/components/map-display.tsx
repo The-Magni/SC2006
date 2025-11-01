@@ -3,6 +3,7 @@
 import { useEffect, useRef, forwardRef, useImperativeHandle } from "react"
 import L from "leaflet"
 import "leaflet/dist/leaflet.css"
+import { OneMapSearchResult } from "@/lib/onemap/onemapAutoFill"
 
 export interface MapDisplayHandle {
   map: L.Map
@@ -10,7 +11,15 @@ export interface MapDisplayHandle {
   clearPolylines: () => void
 }
 
-const MapDisplay = forwardRef<MapDisplayHandle>((_, ref) => {
+// 1. Define the props interface to accept the functions
+interface MapDisplayProps {
+  setLayoutInURL: (layout: "search" | "default" | "route") => void;
+  setStartValue: (value: OneMapSearchResult) => void;
+  setEndValue: (value: OneMapSearchResult) => void;
+}
+
+const MapDisplay = forwardRef<MapDisplayHandle, MapDisplayProps>(
+  ({ setLayoutInURL, setStartValue, setEndValue }, ref) => {
   const mapContainerRef = useRef<HTMLDivElement | null>(null)
   const mapRef = useRef<L.Map | null>(null)
   const markerRef = useRef<L.Marker | null>(null)
@@ -46,12 +55,81 @@ const MapDisplay = forwardRef<MapDisplayHandle>((_, ref) => {
       map.on("click", (e: L.LeafletMouseEvent) => {
         if (markerRef.current) markerRef.current.remove()
 
+        const lat = e.latlng.lat
+        const lng = e.latlng.lng
+        const latLngStr = `${lat.toFixed(5)}, ${lng.toFixed(5)}`
+
+        // Create a partial OneMapSearchResult object for the setters
+        const partialResult: OneMapSearchResult = {
+          SEARCHVAL: `Selected Location (${latLngStr})`,
+          BLK_NO: "",
+          ROAD_NAME: "",
+          BUILDING: "",
+          ADDRESS: latLngStr, // Use lat/lng string as address
+          POSTAL: "",
+          X: "0",
+          Y: "0",
+          LATITUDE: lat.toString(),
+          LONGITUDE: lng.toString(),
+        }
+
+        // Create dynamic popup content
+        const popupContent = document.createElement("div")
+        popupContent.innerHTML = `<b>Selected Location</b><br>${latLngStr}<br><br>`
+
+        // Add CSS for options
+        const style = document.createElement("style")
+        if (!document.getElementById("map-popup-div-style")) {
+          style.id = "map-popup-div-style"
+          style.innerHTML = `
+              .map-popup-div {
+                margin-bottom: 6px;
+                cursor: pointer;
+                font-size: 14px;
+                text-align: center;
+              }
+              .map-popup-div:hover { text-decoration: underline; }
+            `
+          document.head.appendChild(style)
+        }
+
+        // Add "Travel from Here" option (conditionally)
+        if (setStartValue) {
+          const startButton = document.createElement("div")
+          startButton.innerHTML = "Travel from Here"
+          startButton.className = "map-popup-div"
+          startButton.onclick = () => {
+            setStartValue(partialResult)
+            map.closePopup()
+            setLayoutInURL("search")
+          }
+          popupContent.appendChild(startButton)
+        }
+
+        // Add "Travel to Here" option (conditionally)
+        if (setEndValue) {
+          const endButton = document.createElement("div")
+          endButton.innerHTML = "Travel to Here"
+          endButton.className = "map-popup-div"
+          endButton.onclick = () => {
+            setEndValue(partialResult)
+            map.closePopup()
+            setLayoutInURL("search")
+          }
+          popupContent.appendChild(endButton)
+        }
+
+        // Create and open marker/popup
         const marker = L.marker(e.latlng).addTo(map)
-        marker
-          .bindPopup(
-            `Clicked at ${e.latlng.lat.toFixed(5)}, ${e.latlng.lng.toFixed(5)}`
-          )
-          .openPopup()
+        marker.bindPopup(popupContent).openPopup()
+
+        // Clean up marker on popup close
+        marker.on("popupclose", () => {
+          if (markerRef.current === marker) {
+            markerRef.current.remove()
+            markerRef.current = null
+          }
+        })
 
         markerRef.current = marker
       })
@@ -70,32 +148,29 @@ const MapDisplay = forwardRef<MapDisplayHandle>((_, ref) => {
     }
   }, [])
 
+  useImperativeHandle(ref, () => ({
+    map: mapRef.current as L.Map,
 
+    panTo(lat, lng, popupText) {
+      if (!mapRef.current) return;
 
-useImperativeHandle(ref, () => ({
-  map: mapRef.current as L.Map,
+      if (markerRef.current) markerRef.current.remove();
 
-  panTo(lat, lng, popupText) {
-    if (!mapRef.current) return;
+      const marker = L.marker([lat, lng]).addTo(mapRef.current);
+      if (popupText) marker.bindPopup(popupText).openPopup();
+      mapRef.current.setView([lat, lng], 18);
+      markerRef.current = marker;
+    },
+    clearPolylines() {
+      if (!mapRef.current) return;
 
-    if (markerRef.current) markerRef.current.remove();
-
-    const marker = L.marker([lat, lng]).addTo(mapRef.current);
-    if (popupText) marker.bindPopup(popupText).openPopup();
-    mapRef.current.setView([lat, lng], 18);
-    markerRef.current = marker;
-  },
-  clearPolylines() {
-    if (!mapRef.current) return;
-
-    mapRef.current.eachLayer((layer) => {
-      if (!(layer instanceof L.TileLayer)) {
-        mapRef.current!.removeLayer(layer);
-      }
-    });
-  },
-}));
-
+      mapRef.current.eachLayer((layer) => {
+        if (!(layer instanceof L.TileLayer)) {
+          mapRef.current!.removeLayer(layer);
+        }
+      });
+    },
+  }));
 
   return <div ref={mapContainerRef} className="h-full w-full" />
 })

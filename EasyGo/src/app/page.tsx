@@ -82,6 +82,7 @@ export default function Page() {
         debouncedFetch = {debouncedFetch}
         setOptions = {setOptions}
         setLayoutInURL = {setLayoutInURL}
+        setStartValue = {setStartValue}
         setEndValue = {setEndValue}
         mapRef = {mapRef}
       />
