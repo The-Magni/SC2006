@@ -10,14 +10,24 @@ export async function DELETE({ params }: { params: { id: string } }) {
             throw new Error('ID is not provided');
         if (!user)
             throw new Error('Unauthorized');
-        const { data, error } = await supabase
+
+        const { error: filterError } = await supabase
+            .from('filters')
+            .delete()
+            .eq('itinerary_id', id);
+        if (filterError) {
+            console.error(filterError);
+            throw Error('Error deleting filter');
+        }
+
+        const { error: itineraryError } = await supabase
             .from('itineraries')
             .delete()
             .eq('id', id)
             .eq('user_id', user.id);
-        if (error) {
-            console.error(error);
-            throw Error('Error deleting');
+        if (itineraryError) {
+            console.error(itineraryError);
+            throw Error('Error deleting itinerary');
         }
 
         return NextResponse.json({ message: `Successfully delete ${id}`}, { status: 200 });

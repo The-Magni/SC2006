@@ -19,7 +19,7 @@ export async function login(formData: FormData) {
 
   if (error) {
     console.error(error)
-    redirect('/login')
+    redirect('/?layout=login')
   }
 
   revalidatePath('/', 'layout')
@@ -38,7 +38,7 @@ export async function signup(formData: FormData) {
 
   if (error) {
     console.error(error)
-    redirect('/login')
+    redirect('/?layout=login')
   }
 
   revalidatePath('/', 'layout')
@@ -53,9 +53,9 @@ export async function logout() {
         const { data: { session } } = await supabase.auth.getSession();
         if (session) 
             return { success: false, message: 'Logout failed' };
-        redirect('/login');
+        redirect('/?layout=login');
     }
-    redirect('/login');
+    redirect('/?layout=login');
 }
 
 export async function resetPassword(formData: FormData) {

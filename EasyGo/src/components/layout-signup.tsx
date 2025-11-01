@@ -1,7 +1,9 @@
+import { signup } from "@/lib/controllers/AuthController"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Field, FieldDescription, FieldGroup, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
+import Link from "next/link"
 
 export default function LayoutSignup({ ...props }: React.ComponentProps<typeof Card>) {
   return (
@@ -17,13 +19,14 @@ export default function LayoutSignup({ ...props }: React.ComponentProps<typeof C
           <CardContent>
             <form>
               <FieldGroup>
-                <Field>
+                {/* <Field>
                   <FieldLabel htmlFor="name">Full Name</FieldLabel>
                   <Input id="name" type="text" placeholder="John Doe" required />
-                </Field>
+                </Field> */}
                 <Field>
                   <FieldLabel htmlFor="email">Email</FieldLabel>
                   <Input
+                    name="email"
                     id="email"
                     type="email"
                     placeholder="m@example.com"
@@ -36,23 +39,23 @@ export default function LayoutSignup({ ...props }: React.ComponentProps<typeof C
                 </Field>
                 <Field>
                   <FieldLabel htmlFor="password">Password</FieldLabel>
-                  <Input id="password" type="password" required />
+                  <Input name="password" id="password" type="password" required />
                   <FieldDescription>
                     Must be at least 8 characters long.
                   </FieldDescription>
                 </Field>
-                <Field>
+                {/* <Field>
                   <FieldLabel htmlFor="confirm-password">
                     Confirm Password
                   </FieldLabel>
-                  <Input id="confirm-password" type="password" required />
+                  <Input name="confirm_password" id="confirm-password" type="password" required />
                   <FieldDescription>Please confirm your password.</FieldDescription>
-                </Field>
+                </Field> */}
                 <FieldGroup>
                   <Field>
-                    <Button type="submit">Create Account</Button>
+                    <Button type="submit" formAction={signup}>Create Account</Button>
                     <FieldDescription className="px-6 text-center">
-                      Already have an account? <a href="?layout=login">Sign in</a>
+                      Already have an account? <Link href="/?layout=login">Sign in</Link>
                     </FieldDescription>
                   </Field>
                 </FieldGroup>

@@ -39,6 +39,50 @@ export type Database = {
   }
   public: {
     Tables: {
+      filters: {
+        Row: {
+          bus_wait_time: number
+          carpark_availability: number
+          duration: number
+          fare: number
+          id: string
+          itinerary_id: string
+          no_transfers: number
+          platform_density: number
+          walking_distance: number
+        }
+        Insert: {
+          bus_wait_time: number
+          carpark_availability: number
+          duration: number
+          fare: number
+          id?: string
+          itinerary_id: string
+          no_transfers: number
+          platform_density: number
+          walking_distance: number
+        }
+        Update: {
+          bus_wait_time?: number
+          carpark_availability?: number
+          duration?: number
+          fare?: number
+          id?: string
+          itinerary_id?: string
+          no_transfers?: number
+          platform_density?: number
+          walking_distance?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "filters_itinerary_id_fkey"
+            columns: ["itinerary_id"]
+            isOneToOne: true
+            referencedRelation: "itineraries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       itineraries: {
         Row: {
           end: string
