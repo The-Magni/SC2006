@@ -50,7 +50,7 @@ export default function LayoutSearch(
     <SidebarProvider
       style={
         {
-          "--sidebar-width": "350px",
+          "--sidebar-width": "400px",
         } as React.CSSProperties
       }
     >
