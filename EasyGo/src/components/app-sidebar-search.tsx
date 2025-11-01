@@ -696,7 +696,6 @@ export function AppSidebarSearch({ options, loading, debouncedFetch, setOptions,
                         ) {
                           setErrorMessage("No possible routes found. Please try another location.");
                           setRoutes({ best: [], driving: [], public: [], walking: [] });
-                          return;
                         }
 
                       } catch (err) {
