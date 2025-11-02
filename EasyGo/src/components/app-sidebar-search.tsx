@@ -293,20 +293,52 @@ export function AppSidebarSearch({ options, loading, debouncedFetch, setOptions,
   }, [itinerary, setItinerary]);
 
   useEffect(() => {
-      if (itineraryFilter) {
-        setFilterWeights({
-          'time-taken': itineraryFilter.filters.duration,
-          'amount-of-walking': itineraryFilter.filters.walking_distance,
-          'number-of-transfers': itineraryFilter.filters.no_transfers,
-          'crowd-level': itineraryFilter.filters.platform_density,
-          'bus-wait-time': itineraryFilter.filters.bus_wait_time,
-          'fare-cost': itineraryFilter.filters.fare,
-          'carpark-availability': itineraryFilter.filters.carpark_availability
-        });
-        setInputStartValue(itineraryFilter.start);
-        setInputEndValue(itineraryFilter.end);
-      }
-    }, [itineraryFilter]);
+    if (itineraryFilter) {
+      setFilterWeights({
+        'time-taken': itineraryFilter.filters.duration,
+        'amount-of-walking': itineraryFilter.filters.walking_distance,
+        'number-of-transfers': itineraryFilter.filters.no_transfers,
+        'crowd-level': itineraryFilter.filters.platform_density,
+        'bus-wait-time': itineraryFilter.filters.bus_wait_time,
+        'fare-cost': itineraryFilter.filters.fare,
+        'carpark-availability': itineraryFilter.filters.carpark_availability
+      });
+
+      // Create the OneMapSearchResult object for the START location
+      const startLocation: OneMapSearchResult = {
+        SEARCHVAL: itineraryFilter.start,
+        BLK_NO: "",
+        ROAD_NAME: "",
+        BUILDING: "",
+        ADDRESS: itineraryFilter.start,
+        POSTAL: "",
+        X: "",
+        Y: "",
+        LATITUDE: itineraryFilter.start_lat.toString(),
+        LONGITUDE: itineraryFilter.start_lon.toString()
+      };
+
+      // Create the OneMapSearchResult object for the END location
+      const endLocation: OneMapSearchResult = {
+        SEARCHVAL: itineraryFilter.end,
+        BLK_NO: "",
+        ROAD_NAME: "",
+        BUILDING: "",
+        ADDRESS: itineraryFilter.end,
+        POSTAL: "",
+        X: "",
+        Y: "",
+        LATITUDE: itineraryFilter.end_lat.toString(),
+        LONGITUDE: itineraryFilter.end_lon.toString()
+      };
+
+      // Set the state of the page
+      setStartValue(startLocation);
+      setEndValue(endLocation);
+      setInputStartValue(itineraryFilter.start);
+      setInputEndValue(itineraryFilter.end);
+    }
+  }, [itineraryFilter]);
 
   const {routes: routeResults, loading: routeLoading, getItinerariesAndScore, getScore, setRoutes } = useItineraryData()
 
@@ -875,7 +907,7 @@ export function AppSidebarSearch({ options, loading, debouncedFetch, setOptions,
                     <Button
                       className="w-full cursor-pointer flex items-center gap-2 flex-1"
                       variant="outline"
-                      disabled={routeLoading || ((!startValue || !endValue) && !itineraryFilter)}
+                      disabled={routeLoading || !startValue || !endValue}
                       onClick={handleFetchRoutes}
                     >
                       <Search className="h-4 w-4" />
