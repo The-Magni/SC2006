@@ -210,9 +210,9 @@ export class ItineraryController {
 						distance: distance
 					});
 				});
-				nearestCarparks.filter(c => c.carpark.AvailableLots > 0);
-				nearestCarparks.sort((a, b) => a.distance - b.distance);
-				return nearestCarparks.slice(0, Math.min(3, nearestCarparks.length));
+				const filteredNearestCarparks = nearestCarparks.filter(c => c.carpark.AvailableLots > 0);
+				filteredNearestCarparks.sort((a, b) => a.distance - b.distance);
+				return filteredNearestCarparks.slice(0, Math.min(3, filteredNearestCarparks.length));
 			} catch (e) {
 				console.error(e);
 				throw new Error('Fail to get carpark data');
