@@ -47,11 +47,6 @@ interface SavedRouteCardProps {
 }
 
 const SavedRouteCard: React.FC<SavedRouteCardProps> = ({ route, onClick, onDelete}) => {
-  const handleRename = (e: React.MouseEvent<HTMLElement>) => {
-    e.stopPropagation();
-    console.log(`Renaming route: ${route.name}`);
-  };
-
   const handleDelete = async (e: React.MouseEvent<HTMLElement>) => {
     e.stopPropagation();
     const response = await fetch(`/api/itineraries/${route.id}`, {
@@ -84,19 +79,11 @@ const SavedRouteCard: React.FC<SavedRouteCardProps> = ({ route, onClick, onDelet
 
             {/* The content that appears when the trigger is clicked */}
             <DropdownMenuContent align="end">
-
-              {/* Rename Option */}
-              <DropdownMenuItem onClick={handleRename}>
-                <Edit className="mr-2 h-4 w-4" />
-                <span>Rename</span>
-              </DropdownMenuItem>
-
               {/* Delete Option */}
               <DropdownMenuItem onClick={handleDelete} className="text-red-600 focus:text-red-600">
                 <Trash2 className="mr-2 h-4 w-4 text-red-600" />
                 <span>Delete</span>
               </DropdownMenuItem>
-
             </DropdownMenuContent>
           </DropdownMenu>
         </CardHeader>
