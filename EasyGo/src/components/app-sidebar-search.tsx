@@ -277,7 +277,7 @@ export function AppSidebarSearch({ options, loading, debouncedFetch, setOptions,
   const isCollapsed = state === "collapsed"
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [driveType, setDriveType] = useState<"carpark" | "direct">("carpark");
-  const profile = useUser();
+  const [profile, setProfile] = useUser();
   const { itinerary, setItinerary } = useSelectedItinerary();
   const [itineraryFilter, setItineraryFilter] = useState<ItineraryFilter | null>(null);
   const [isSaving, setIsSaving] = useState(false);

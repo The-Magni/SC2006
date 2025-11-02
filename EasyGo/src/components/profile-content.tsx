@@ -13,7 +13,7 @@ import { updatePersonal, updatePassword } from "@/lib/controllers/AuthController
 import { useUser } from "@/hooks/useUser";
 
 export default function ProfileContent() {
-  const profile = useUser();
+  const [profile, setProfile] = useUser();
   const [open, setOpen] = useState(false);
 
   // ----- form state (you can hook this up to your backend later) -----
@@ -75,7 +75,13 @@ export default function ProfileContent() {
               </div> */}
 
               <div className="flex justify-end">
-                <Button variant="default" formAction={updatePersonal}>Save Changes</Button>
+                <Button variant="default" formAction={ async (formData) => {
+                  if (profile)
+                    setProfile({...profile, name: formData.get('name') as string})
+                  
+                  await updatePersonal(formData);
+                }
+                }>Save Changes</Button>
               </div>
             </form>
           </CardContent>

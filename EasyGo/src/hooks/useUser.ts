@@ -60,5 +60,5 @@ export function useUser() {
         return () => subscription.unsubscribe();
     }, []);
 
-    return profile;
+    return [profile, setProfile] as const;
 }

@@ -12,7 +12,7 @@ import { useUser } from "@/hooks/useUser";
 export function AppSidebarDefault({ ...props }: React.ComponentProps<typeof Sidebar>) {
    const {state} = useSidebar();
   const isCollapsed = state === "collapsed"
-  const profile = useUser();
+  const [profile, setProfile] = useUser();
 
   return (
     <Sidebar collapsible="icon" {...props}>

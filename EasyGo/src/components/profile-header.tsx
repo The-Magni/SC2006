@@ -6,7 +6,7 @@ import { Mail } from "lucide-react";
 import { useUser } from "@/hooks/useUser";
 
 export default function ProfileHeader() {
-  const profile = useUser();
+  const [profile, setProfile] = useUser();
   return (
     <Card>
       <CardContent>

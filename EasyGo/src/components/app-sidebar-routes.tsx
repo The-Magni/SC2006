@@ -108,7 +108,7 @@ const SavedRouteCard: React.FC<SavedRouteCardProps> = ({ route, onClick, onDelet
 export function AppSidebarRoutes({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const {state} = useSidebar();
   const isCollapsed = state === "collapsed"
-  const profile = useUser();
+  const [profile, setProfile] = useUser();
   const [savedRoutes, setSavedRoutes] = React.useState<ItineraryFilter[]>([]);
   const { setItinerary } = useSelectedItinerary();
   const router = useRouter();
