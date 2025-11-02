@@ -1,5 +1,6 @@
 import { NextResponse, NextRequest } from "next/server";
 import { createClient } from "@/utils/supabase/server";
+import { QueryData } from "@supabase/supabase-js";
 
 interface RequestBody {
     start: string;
@@ -19,6 +20,7 @@ interface RequestBody {
     }
 
 }
+
 
 export async function GET() {
     const supabase = await createClient();

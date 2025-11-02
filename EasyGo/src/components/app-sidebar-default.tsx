@@ -10,7 +10,7 @@ import { useUser } from "@/hooks/useUser";
 
 
 export function AppSidebarDefault({ ...props }: React.ComponentProps<typeof Sidebar>) {
-  const {state} = useSidebar();
+   const {state} = useSidebar();
   const isCollapsed = state === "collapsed"
   const profile = useUser();
 

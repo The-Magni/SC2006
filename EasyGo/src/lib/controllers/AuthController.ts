@@ -46,11 +46,11 @@ export async function signup(formData: FormData) {
 
 
   const { error: profileError } = await supabase
-    .from('users')
-    .insert({
-      id: data.user?.id,
-      name: name
-    });
+  .from('users')
+  .insert({
+    id: data.user?.id,
+    name: name
+  });
 
   if (profileError) {
     console.error(error);

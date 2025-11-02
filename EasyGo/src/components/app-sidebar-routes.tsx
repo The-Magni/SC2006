@@ -8,28 +8,42 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { MapPinIcon, EllipsisVertical, Edit, Trash2, ArrowRight } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import { useUser } from "@/hooks/useUser"
+import { useSelectedItinerary } from "@/app/provider"
+import { useRouter } from "next/navigation"
 
-// This is sample data.
-const data = {
-  user: {
-    name: "shadcn",
-    email: "m@example.com",
-    avatar: "/avatars/shadcn.jpg",
-  }
+export interface ItineraryFilter {
+  end: string;
+  end_lat: number;
+  end_lon: number;
+  id: string;
+  start: string;
+  start_lat: number;
+  start_lon: number;
+  user_id: string;
+  filters: {
+    bus_wait_time: number;
+      carpark_availability: number;
+      duration: number;
+      fare: number;
+      id: string;
+      itinerary_id: string;
+      no_transfers: number;
+      platform_density: number;
+      walking_distance: number;
+  };
 }
 
-// Sample saved route data
-const routes = [
-  {name: "My Favourite Route 1", start: "Location A", end: "Location B"},
-  {name: "My Favourite Route 2", start: "Location C", end: "Location D"},
-  {name: "My Favourite Route 3", start: "Location E", end: "Location F"},
-]
-
-const SavedRouteCard = ({ route }: { route: {
+interface SavedRouteCardProps {
+  route: {
     name: string;
     start: string;
     end: string;
-  };}) => {
+  };
+  onClick?: () => void;
+}
+
+const SavedRouteCard: React.FC<SavedRouteCardProps> = ({ route, onClick}) => {
   const handleRename = () => {
     console.log(`Renaming route: ${route.name}`);
   };
@@ -77,7 +91,7 @@ const SavedRouteCard = ({ route }: { route: {
           </DropdownMenu>
         </CardHeader>
 
-        <CardContent className="pt-0 pb-3 pl-14 text-sm text-muted-foreground flex items-center">
+        <CardContent className="pt-0 pb-3 pl-14 text-sm text-muted-foreground flex items-center" onClick={onClick}>
           <span className="font-medium text-foreground truncate">
             {route.start}
           </span>
@@ -97,6 +111,35 @@ const SavedRouteCard = ({ route }: { route: {
 export function AppSidebarRoutes({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const {state} = useSidebar();
   const isCollapsed = state === "collapsed"
+  const profile = useUser();
+  const [savedRoutes, setSavedRoutes] = React.useState<ItineraryFilter[]>([]);
+  const { setItinerary } = useSelectedItinerary();
+  const router = useRouter();
+  const handleClick = (i: ItineraryFilter) => {
+    setItinerary(i);
+    router.push('/?layout=search');
+  }
+
+  const getSavedRoutes = async () => {
+    const response = await fetch('/api/itineraries', {
+      method: 'GET'
+    });
+    if (!response.ok) {
+      console.log('Error return saved routes');
+      return null;
+    }
+    const data: { itinerariesWithFilter: ItineraryFilter[] } = await response.json();
+    return data.itinerariesWithFilter;
+  };
+
+  React.useEffect(() => {
+    const fetchData = async () => {
+      const data = await getSavedRoutes();
+      if (data) setSavedRoutes(data);
+    };
+    fetchData();
+  }, []);
+  
 
   return (
     <Sidebar collapsible="icon" {...props}>
@@ -122,10 +165,15 @@ export function AppSidebarRoutes({ ...props }: React.ComponentProps<typeof Sideb
 
           <SidebarGroupContent>
             {!isCollapsed && (
-              routes.map((route, index) => (
+              savedRoutes.map((route, index) => (
                 <SavedRouteCard
                   key={index}
-                  route={route}
+                  route={{
+                    name: `My favourite route ${index+1}`,
+                    start: route.start,
+                    end: route.end 
+                  }}
+                  onClick={() => handleClick(route)}
                 />
               ))
             )}
@@ -134,8 +182,14 @@ export function AppSidebarRoutes({ ...props }: React.ComponentProps<typeof Sideb
       </SidebarContent>
 
       <SidebarFooter>
-        <NavUser user={data.user} />
-      </SidebarFooter>
+        {
+          profile && <NavUser user={{
+            name: profile.name,
+            email: profile.email,
+            avatar: profile.avatar 
+          }} />
+        }
+        </SidebarFooter>
 
       <SidebarRail />
     </Sidebar>

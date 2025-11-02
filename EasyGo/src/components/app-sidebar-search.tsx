@@ -19,6 +19,9 @@ import type { Incident } from "@/lib/boundary/ExternalApiHandler"
 // Polyline drawing imports
 import { BaseItineraryData, DrivingItineraryData, ItineraryData} from "@/lib/controllers/Parser";
 import { drawItineraryLine } from "@/lib/controllers/leaflet/leaflethelper-controller";
+import { useUser } from "@/hooks/useUser";
+import { useSelectedItinerary } from "@/app/provider";
+import { ItineraryFilter } from "./app-sidebar-routes";
 
 type SidebarSearchProps = {
   options: OneMapSearchResult[];
@@ -34,15 +37,6 @@ type SidebarSearchProps = {
   // Add new typing for routing data @John
   
 };
-
-// This is sample data.
-const data = {
-  user: {
-    name: "shadcn",
-    email: "m@example.com",
-    avatar: "/avatars/shadcn.jpg",
-  }
-}
 
 const transportModes = [
   { id: "best", icon: Star, label: "Best" },
@@ -254,6 +248,36 @@ export function AppSidebarSearch({ options, loading, debouncedFetch, setOptions,
   const isCollapsed = state === "collapsed"
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [driveType, setDriveType] = useState<"carpark" | "direct">("carpark");
+  const profile = useUser();
+  const { itinerary, setItinerary } = useSelectedItinerary();
+  const [itineraryFilter, setItineraryFilter] = useState<ItineraryFilter | null>(null);
+
+  useEffect(() => {
+    if (itinerary) {
+      setItineraryFilter(itinerary);
+      setItinerary(null); // clear the context
+    }
+  }, [itinerary, setItinerary]);
+
+  useEffect(() => {
+      if (itineraryFilter) {
+        setFilterWeights({
+          'time-taken': itineraryFilter.filters.duration,
+          'amount-of-walking': itineraryFilter.filters.walking_distance,
+          'number-of-transfers': itineraryFilter.filters.no_transfers,
+          'crowd-level': itineraryFilter.filters.platform_density,
+          'bus-wait-time': itineraryFilter.filters.bus_wait_time,
+          'fare-cost': itineraryFilter.filters.fare,
+          'carpark-availability': itineraryFilter.filters.carpark_availability
+        });
+        setInputStartValue(itineraryFilter.start);
+        setInputEndValue(itineraryFilter.end);
+      }
+    }, [itineraryFilter]);
+
+
+  // Temporary button state
+  const [isToggled, setIsToggled] = useState(false);
   const {routes: routeResults, loading: routeLoading, getItinerariesAndScore, getScore, setRoutes } = useItineraryData()
 
   // Handle filter value changes
@@ -669,7 +693,8 @@ export function AppSidebarSearch({ options, loading, debouncedFetch, setOptions,
                   variant="outline"
                   disabled={routeLoading}
                   onClick={async () => {
-                    if (!startValue || !endValue) {
+                    if ((!startValue || !endValue) && !itineraryFilter) {
+                      console.log(itineraryFilter);
                       alert("Please select both start and end points first.");
                       return;
                     }
@@ -688,14 +713,24 @@ export function AppSidebarSearch({ options, loading, debouncedFetch, setOptions,
                     };
 
                     try {
-                      const result = await getItinerariesAndScore(
-                        [parseFloat(startValue.LATITUDE), parseFloat(startValue.LONGITUDE)],
-                        [parseFloat(endValue.LATITUDE), parseFloat(endValue.LONGITUDE)],
-                        startValue.SEARCHVAL,
-                        endValue.SEARCHVAL,
-                        filters,
-                        driveType
-                      );
+                        const appliedStart: [number, number] = itineraryFilter
+                      ? [itineraryFilter.start_lat, itineraryFilter.start_lon]
+                      : [parseFloat(startValue!.LATITUDE), parseFloat(startValue!.LONGITUDE)];
+
+                        const appliedEnd: [number, number] = itineraryFilter
+                      ? [itineraryFilter.end_lat, itineraryFilter.end_lon]
+                      : [parseFloat(endValue!.LATITUDE), parseFloat(endValue!.LONGITUDE)];
+                        const appliedStartName = itineraryFilter ? itineraryFilter.start : startValue!.SEARCHVAL;
+                        const appliedEndName = itineraryFilter ? itineraryFilter.end : endValue!.SEARCHVAL;
+                        const result = await getItinerariesAndScore(
+                          appliedStart,
+                          appliedEnd,
+                          appliedStartName,
+                          appliedEndName,
+                          filters,
+                          driveType
+                        );
+                        setItineraryFilter(null);
 
                       // Handle invalid or empty responses
                       if (
@@ -829,7 +864,44 @@ export function AppSidebarSearch({ options, loading, debouncedFetch, setOptions,
       </SidebarContent>
 
       <SidebarFooter>
-        <NavUser user={data.user} />
+        {
+          profile && <NavUser user={{
+            name: profile.name,
+            email: profile.email,
+            avatar: profile.avatar
+          }} />
+        }
+        <button onClick={async () => {
+          if (!startValue || !endValue)
+            return;
+          const response = await fetch('/api/itineraries', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              start: startValue?.SEARCHVAL,
+              end: endValue?.SEARCHVAL,
+              startLat: startValue?.LATITUDE,
+              endLat: endValue?.LATITUDE,
+              startLon: startValue?.LONGITUDE,
+              endLon: endValue?.LONGITUDE,
+              filterData: {
+                durationWeight: filterWeights["time-taken"],
+                walkingDistanceWeight: filterWeights["amount-of-walking"],
+                noTransferWeight: filterWeights["number-of-transfers"],
+                carparkAvailabilityWeight: filterWeights["carpark-availability"],
+                busWaitTimeWeight: filterWeights["bus-wait-time"],
+                platformDensityWeight: filterWeights["crowd-level"],
+                fareWeight: filterWeights["fare-cost"],
+              }
+            })
+          });
+          const data = await response.json();
+          console.log(data);
+        }}>
+          Save Route
+        </button>
       </SidebarFooter>
 
       <SidebarRail />

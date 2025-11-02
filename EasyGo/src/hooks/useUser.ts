@@ -53,7 +53,7 @@ export function useUser() {
         } = supabase.auth.onAuthStateChange((event, session) => {
             if (!session?.user)
                 setProfile(null);
-            else
+            else if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED')
                 fetchUser();
         });
 
