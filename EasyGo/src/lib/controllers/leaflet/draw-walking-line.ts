@@ -32,17 +32,24 @@ export async function drawWalkingRoute(map: L.Map, data: WalkingItineraryData): 
 
     // Start marker
     if (data.polyLineCoords.length > 0) {
-        L.circleMarker(data.polyLineCoords[0], {
+    const startMarker = L.circleMarker(data.polyLineCoords[0], {
         radius: 6,
         color: "#34C759",
         fillColor: "#34C759",
         fillOpacity: 0.8,
-        })
-        .addTo(map)
-        .bindPopup("<b>Start of Walk</b>")
-        .openPopup();
-    }
+    }).addTo(map);
 
+    const startPopup = L.popup({
+        autoClose: false,
+        closeOnClick: false,
+        closeButton: false,
+        offset: L.point(0, -10),
+    })
+        .setLatLng(data.polyLineCoords[0])
+        .setContent("<b>Start of Walk</b>");
+
+    map.addLayer(startPopup);
+    }
     // End marker
     const end = data.polyLineCoords[data.polyLineCoords.length - 1];
     if (end) {
@@ -56,6 +63,8 @@ export async function drawWalkingRoute(map: L.Map, data: WalkingItineraryData): 
         .bindPopup("<b>Destination</b>")
         .openPopup();
     }
+    //map.addLayer(endMarker);
+
 
     // Auto-fit map
     map.fitBounds(data.polyLineCoords, { padding: [40, 40] });

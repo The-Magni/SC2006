@@ -10,12 +10,52 @@ export async function drawDrivingRoute(map: L.Map, data: DrivingItineraryData) {
 
         map.fitBounds(poly.getBounds(), { padding: [40, 40] });
 
-        const start = data.polyLineCoords[0];
-        const end = data.polyLineCoords[data.polyLineCoords.length - 1];
-        L.marker(start).addTo(map).bindPopup("<b>Start</b>");
-        L.marker(end).addTo(map).bindPopup("<b>Destination</b>");
+    const start = data.polyLineCoords[0];
+    if (start) {
+        const startCircle = L.circleMarker(start, {
+        radius: 6,
+        color: "#34C759",
+        fillColor: "#34C759",
+        fillOpacity: 0.85,
+        }).addTo(map);
+
+        const startPopup = L.popup({
+        autoClose: false,
+        closeOnClick: false,
+        closeButton: false,
+        offset: L.point(0, -10),
+        })
+        .setLatLng(start)
+        .setContent("<b>Start of Drive</b>");
+
+        map.addLayer(startPopup);
+    }
+
+    // ====== Circle End Marker ======
+    const end = data.polyLineCoords[data.polyLineCoords.length - 1];
+    if (end) {
+        const endCircle = L.circleMarker(end, {
+        radius: 6,
+        color: "#FF3B30",
+        fillColor: "#FF3B30",
+        fillOpacity: 0.85,
+        }).addTo(map);
+
+        const endPopup = L.popup({
+        autoClose: false,
+        closeOnClick: false,
+        closeButton: false,
+        offset: L.point(0, -10),
+        })
+        .setLatLng(end)
+        .setContent("<b>Destination</b>");
+
+        map.addLayer(endPopup);
+    }
+
         
-            if (data.nearestCarpark && data.nearestCarpark.lat && data.nearestCarpark.lng) {
+
+    if (data.nearestCarpark && data.nearestCarpark.lat && data.nearestCarpark.lng) {
         const { name, availableLots, lat, lng } = data.nearestCarpark;
 
         const carparkPopup = `

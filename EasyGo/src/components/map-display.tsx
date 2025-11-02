@@ -34,18 +34,32 @@ const MapDisplay = forwardRef<MapDisplayHandle, MapDisplayProps>(
       const map = L.map(mapContainerRef.current, {
         center: L.latLng(1.2868108, 103.8545349),
         zoom: 16,
-        attributionControl: false,
+        attributionControl: true,
       })
 
       mapRef.current = map
+      map.attributionControl.setPrefix(false)
       map.setMaxBounds(bounds)
-
+      map.setMinZoom(11);
+      map.setMaxZoom(18);
+      map.on("drag", function () {
+      map.panInsideBounds(bounds, { animate: false });
+      });
       const basemap = L.tileLayer(
         "https://www.onemap.gov.sg/maps/tiles/Night/{z}/{x}/{y}.png",
         {
           detectRetina: true,
           maxZoom: 19,
           minZoom: 11,
+             /** DO NOT REMOVE the OneMap attribution below **/
+          attribution:
+            '<span style="display:flex;align-items:center;gap:4px;line-height:1;">' +
+              '<img src="https://www.onemap.gov.sg/web-assets/images/logo/om_logo.png" ' +
+                'style="height:14px;width:14px;vertical-align:middle;" />' +
+              '<a href="https://www.onemap.gov.sg/" target="_blank" rel="noopener noreferrer" style="color:#fff;text-decoration:none;">OneMap</a>' +
+              '&nbsp;&copy;&nbsp;contributors&nbsp;&#124;&nbsp;' +
+              '<a href="https://www.sla.gov.sg/" target="_blank" rel="noopener noreferrer" style="color:#fff;text-decoration:none;">Singapore Land Authority</a>' +
+            '</span>',
         }
       )
 
