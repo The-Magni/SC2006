@@ -63,7 +63,7 @@ export default function ProfileContent() {
           </CardHeader>
           <CardContent className="space-y-6">
             <Separator />
-            <form>
+            <form className="space-y-6">
               <div className="space-y-2">
                 <Label htmlFor="name">Full Name</Label>
                 <Input name="name" id="name" defaultValue={profile ? profile.name: ''} />

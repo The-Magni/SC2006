@@ -61,7 +61,7 @@ const SavedRouteCard: React.FC<SavedRouteCardProps> = ({ route, onClick, onDelet
 
   return (
     <div className="px-1 pt-4">
-      <Card className="cursor-pointer">
+      <Card className="cursor-pointer" onClick={onClick}>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <div className="flex items-center">
             <MapPinIcon className="h-5 w-5 mr-3" />
@@ -98,7 +98,7 @@ const SavedRouteCard: React.FC<SavedRouteCardProps> = ({ route, onClick, onDelet
           </DropdownMenu>
         </CardHeader>
 
-        <CardContent className="pt-0 pb-3 pl-14 text-sm text-muted-foreground flex items-center" onClick={onClick}>
+        <CardContent className="pt-0 pb-3 pl-14 text-sm text-muted-foreground flex items-center">
           <span className="font-medium text-foreground truncate">
             {route.start}
           </span>
@@ -146,6 +146,9 @@ export function AppSidebarRoutes({ ...props }: React.ComponentProps<typeof Sideb
     };
     fetchData();
   }, []);
+
+  // Determine the label text based on the number of saved routes
+  const groupLabel = savedRoutes.length === 0 ? "No Saved Routes" : "Saved Routes";
   
 
   return (
@@ -168,7 +171,7 @@ export function AppSidebarRoutes({ ...props }: React.ComponentProps<typeof Sideb
 
       <SidebarContent>
         <SidebarGroup className="mt-4">
-          <SidebarGroupLabel>Saved Routes</SidebarGroupLabel>
+          <SidebarGroupLabel>{groupLabel}</SidebarGroupLabel>
 
           <SidebarGroupContent>
             {!isCollapsed && (
@@ -177,7 +180,7 @@ export function AppSidebarRoutes({ ...props }: React.ComponentProps<typeof Sideb
                   key={index}
                   route={{
                     id: route.id,
-                    name: `My favourite route ${index+1}`,
+                    name: `My Favourite Route ${index+1}`,
                     start: route.start,
                     end: route.end 
                   }}

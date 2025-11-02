@@ -10,7 +10,7 @@ import { Slider } from "@/components/ui/slider"
 import { NavUser } from "@/components/nav-user"
 import Autocomplete from "@mui/material/Autocomplete";
 import TextField from "@mui/material/TextField";
-import { Star, Car, Bus, Footprints, Circle, MapPinIcon, ListFilterIcon, LucideIcon, Loader2, DatabaseIcon } from "lucide-react";
+import { Star, Car, Bus, Footprints, Circle, MapPinIcon, ListFilterIcon, LucideIcon, Loader2, DatabaseIcon, Bookmark, Search, Route } from "lucide-react";
 import { OneMapSearchResult } from "@/lib/onemap/onemapAutoFill";
 import type { MapDisplayHandle } from "@/components/map-display";
 import { ConvenienceFilter, GetItinerariesResponse, useItineraryData } from "@/hooks/itinerary-data"
@@ -251,6 +251,7 @@ export function AppSidebarSearch({ options, loading, debouncedFetch, setOptions,
   const profile = useUser();
   const { itinerary, setItinerary } = useSelectedItinerary();
   const [itineraryFilter, setItineraryFilter] = useState<ItineraryFilter | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     if (itinerary) {
@@ -275,9 +276,6 @@ export function AppSidebarSearch({ options, loading, debouncedFetch, setOptions,
       }
     }, [itineraryFilter]);
 
-
-  // Temporary button state
-  const [isToggled, setIsToggled] = useState(false);
   const {routes: routeResults, loading: routeLoading, getItinerariesAndScore, getScore, setRoutes } = useItineraryData()
 
   // Handle filter value changes
@@ -428,6 +426,110 @@ export function AppSidebarSearch({ options, loading, debouncedFetch, setOptions,
     const map = mapRef.current.map;
     mapRef.current.clearPolylines();
     drawItineraryLine(map, itinerary.mode, itinerary.data);
+  };
+
+  // Handle fetching routes
+  const handleFetchRoutes = async () => {
+    if ((!startValue || !endValue) && !itineraryFilter) {
+      console.log(itineraryFilter);
+      alert("Please select both start and end points first.");
+      return;
+    }
+
+    // Reset old error message
+    setErrorMessage(null);
+
+    const filters = {
+      durationWeight: filterWeights["time-taken"],
+      walkingDistanceWeight: filterWeights["amount-of-walking"],
+      noTransferWeight: filterWeights["number-of-transfers"],
+      carparkAvailabilityWeight: filterWeights["carpark-availability"],
+      busWaitTimeWeight: filterWeights["bus-wait-time"],
+      platformDensityWeight: filterWeights["crowd-level"],
+      fareWeight: filterWeights["fare-cost"],
+    };
+
+    try {
+      const appliedStart: [number, number] = itineraryFilter
+        ? [itineraryFilter.start_lat, itineraryFilter.start_lon]
+        : [parseFloat(startValue!.LATITUDE), parseFloat(startValue!.LONGITUDE)];
+
+      const appliedEnd: [number, number] = itineraryFilter
+        ? [itineraryFilter.end_lat, itineraryFilter.end_lon]
+        : [parseFloat(endValue!.LATITUDE), parseFloat(endValue!.LONGITUDE)];
+      const appliedStartName = itineraryFilter ? itineraryFilter.start : startValue!.SEARCHVAL;
+      const appliedEndName = itineraryFilter ? itineraryFilter.end : endValue!.SEARCHVAL;
+
+      const result = await getItinerariesAndScore(
+        appliedStart,
+        appliedEnd,
+        appliedStartName,
+        appliedEndName,
+        filters,
+        driveType
+      );
+      setItineraryFilter(null);
+
+      // Handle invalid or empty responses
+      if (
+        !result ||
+        (!result.best?.length &&
+          !result.driving?.length &&
+          !result.public?.length &&
+          !result.walking?.length)
+      ) {
+        setErrorMessage("No possible routes found. Please try another location.");
+        setRoutes({ best: [], driving: [], public: [], walking: [] });
+      }
+
+    } catch (err) {
+      console.error("Error fetching routes:", err);
+      setErrorMessage("No possible routes found. Please try another location.");
+      setRoutes({ best: [], driving: [], public: [], walking: [] });
+      return;
+    }
+  };
+
+  // Handle saving route
+  const handleSaveRoute = async () => {
+    if (!startValue || !endValue) {
+      alert("Please select both start and end points before saving.");
+      return;
+    }
+    setIsSaving(true);
+    try {
+      const response = await fetch('/api/itineraries', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          start: startValue?.SEARCHVAL,
+          end: endValue?.SEARCHVAL,
+          startLat: startValue?.LATITUDE,
+          endLat: endValue?.LATITUDE,
+          startLon: startValue?.LONGITUDE,
+          endLon: endValue?.LONGITUDE,
+          filterData: {
+            durationWeight: filterWeights["time-taken"],
+            walkingDistanceWeight: filterWeights["amount-of-walking"],
+            noTransferWeight: filterWeights["number-of-transfers"],
+            carparkAvailabilityWeight: filterWeights["carpark-availability"],
+            busWaitTimeWeight: filterWeights["bus-wait-time"],
+            platformDensityWeight: filterWeights["crowd-level"],
+            fareWeight: filterWeights["fare-cost"],
+          }
+        })
+      });
+      const data = await response.json();
+      console.log(data);
+      // You could add a success alert here, e.g., alert("Route saved!")
+    } catch (err) {
+      console.error("Error saving route:", err);
+      alert("Failed to save route.");
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -656,111 +758,81 @@ export function AppSidebarSearch({ options, loading, debouncedFetch, setOptions,
             )}
 
             {!isCollapsed && (
-              <div className="px-2 pt-3">
-                <div className="flex items-center justify-between bg-[#121212] border border-white/10 rounded-lg px-4 py-2">
-                  <span className="text-sm text-white">Driving Mode</span>
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => setDriveType("carpark")}
-                      className={`text-xs px-3 py-1 rounded-md transition-colors ${
-                        driveType === "carpark"
-                          ? "bg-blue-500 text-white"
-                          : "bg-gray-800 text-gray-300 hover:bg-gray-700"
-                      }`}
-                    >
-                      To Carpark
-                    </button>
-                    <button
-                      onClick={() => setDriveType("direct")}
-                      className={`text-xs px-3 py-1 rounded-md transition-colors ${
-                        driveType === "direct"
-                          ? "bg-blue-500 text-white"
-                          : "bg-gray-800 text-gray-300 hover:bg-gray-700"
-                      }`}
-                    >
-                      Direct
-                    </button>
-                  </div>
+              <div className="px-2 pt-4 flex items-center gap-3">
+                {/* 1. Use the 'Car' icon */}
+                <Car className="h-3 w-3" />
+
+                {/* 2. Use 'grid' and 'grid-cols-2' to make the buttons fill the width */}
+                <div className="flex-1 grid grid-cols-2 gap-1 bg-gray-800 rounded-lg p-1">
+                  <button
+                    onClick={() => setDriveType("carpark")}
+                    className={`text-sm w-full py-1 rounded-md transition-colors ${
+                      driveType === "carpark"
+                        ? "bg-blue-500 text-white"
+                        : "text-gray-300 hover:bg-gray-700"
+                    }`}
+                  >
+                    To Carpark
+                  </button>
+                  <button
+                    onClick={() => setDriveType("direct")}
+                    className={`text-sm w-full py-1 rounded-md transition-colors ${
+                      driveType === "direct"
+                        ? "bg-blue-500 text-white"
+                        : "text-gray-300 hover:bg-gray-700"
+                    }`}
+                  >
+                    Direct
+                  </button>
                 </div>
               </div>
             )}
 
             {!isCollapsed && (
               <div className="px-2 pt-4">
-                {/* where the search is actually triggered ===================================*/}
-                <Button
-                  className="w-full cursor-pointer"
-                  variant="outline"
-                  disabled={routeLoading}
-                  onClick={async () => {
-                    if ((!startValue || !endValue) && !itineraryFilter) {
-                      console.log(itineraryFilter);
-                      alert("Please select both start and end points first.");
-                      return;
-                    }
+                {/* 1. Wrap the icon and button group in a new flex container */}
+                <div className="flex items-center gap-3">
 
-                    // Reset old error message
-                    setErrorMessage(null);
+                  {/* 2. Add the 'Route' icon on the left */}
+                  <Route className="h-3 w-3" />
 
-                    const filters = {
-                      durationWeight: filterWeights["time-taken"],
-                      walkingDistanceWeight: filterWeights["amount-of-walking"],
-                      noTransferWeight: filterWeights["number-of-transfers"],
-                      carparkAvailabilityWeight: filterWeights["carpark-availability"],
-                      busWaitTimeWeight: filterWeights["bus-wait-time"],
-                      platformDensityWeight: filterWeights["crowd-level"],
-                      fareWeight: filterWeights["fare-cost"],
-                    };
+                  {/* 3. Add 'flex-1' to the original button group div */}
+                  <div className="flex items-center gap-2 flex-1">
+                    {/* Button 1: Save Route */}
+                    <Button
+                      className="w-full cursor-pointer flex items-center gap-2 flex-1"
+                      variant="outline"
+                      disabled={isSaving || !startValue || !endValue}
+                      onClick={handleSaveRoute}
+                    >
+                      {isSaving ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Bookmark className="h-4 w-4" />
+                      )}
+                      {isSaving ? "Saving..." : "Save Route"}
+                    </Button>
 
-                    try {
-                        const appliedStart: [number, number] = itineraryFilter
-                      ? [itineraryFilter.start_lat, itineraryFilter.start_lon]
-                      : [parseFloat(startValue!.LATITUDE), parseFloat(startValue!.LONGITUDE)];
+                    {/* Button 2: Fetch Routes */}
+                    <Button
+                      className="w-full cursor-pointer flex items-center gap-2 flex-1"
+                      variant="outline"
+                      disabled={routeLoading || ((!startValue || !endValue) && !itineraryFilter)}
+                      onClick={handleFetchRoutes}
+                    >
+                      <Search className="h-4 w-4" />
+                      {routeLoading ? "Fetching..." : "Fetch Routes"}
+                    </Button>
+                  </div>
+                </div>
 
-                        const appliedEnd: [number, number] = itineraryFilter
-                      ? [itineraryFilter.end_lat, itineraryFilter.end_lon]
-                      : [parseFloat(endValue!.LATITUDE), parseFloat(endValue!.LONGITUDE)];
-                        const appliedStartName = itineraryFilter ? itineraryFilter.start : startValue!.SEARCHVAL;
-                        const appliedEndName = itineraryFilter ? itineraryFilter.end : endValue!.SEARCHVAL;
-                        const result = await getItinerariesAndScore(
-                          appliedStart,
-                          appliedEnd,
-                          appliedStartName,
-                          appliedEndName,
-                          filters,
-                          driveType
-                        );
-                        setItineraryFilter(null);
-
-                      // Handle invalid or empty responses
-                      if (
-                        !result ||
-                        (!result.best?.length &&
-                          !result.driving?.length &&
-                          !result.public?.length &&
-                          !result.walking?.length)
-                      ) {
-                        setErrorMessage("No possible routes found. Please try another location.");
-                        setRoutes({ best: [], driving: [], public: [], walking: [] });
-                      }
-
-                    } catch (err) {
-                      console.error("Error fetching routes:", err);
-                      setErrorMessage("No possible routes found. Please try another location.");
-                      setRoutes({ best: [], driving: [], public: [], walking: [] });
-                      return;
-                    }
-                  }}
-                >
-                  {routeLoading ? "Fetching Routes..." : "Get Routes"}
-                </Button>
+                {/* Error message display (now outside the button group) */}
                 {errorMessage && (
                   <div className="flex flex-col items-center justify-center py-8 text-center text-red-400">
                     <DatabaseIcon className="h-8 w-8 mb-2" />
                     <p className="text-sm">{errorMessage}</p>
                   </div>
                 )}
-                {/* end of where the search is actually triggered ===================================*/}
               </div>
             )}
 
@@ -804,7 +876,7 @@ export function AppSidebarSearch({ options, loading, debouncedFetch, setOptions,
                   <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
                     <Loader2 className="h-6 w-6 animate-spin mb-2 text-blue-500" />
                     <p className="text-sm">
-                      {routeLoading ? "Fetching routes..." : "Recalculating scores..."}
+                      {routeLoading ? "Fetching Routes..." : "Recalculating Scores..."}
                     </p>
                   </div>
 
@@ -854,11 +926,11 @@ export function AppSidebarSearch({ options, loading, debouncedFetch, setOptions,
                   })()
                 ) : (
                   <p className="text-muted-foreground text-sm px-3 py-2">
-                    No routes yet. Click “Get Routes” to fetch available options.
+                    No routes yet. Click “Fetch Routes” to fetch available options.
                   </p>
                 )}
-                </>
-              )}
+              </>
+            )}
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
@@ -871,40 +943,125 @@ export function AppSidebarSearch({ options, loading, debouncedFetch, setOptions,
             avatar: profile.avatar
           }} />
         }
-        <button onClick={async () => {
-          if (!startValue || !endValue)
-            return;
-          const response = await fetch('/api/itineraries', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-              start: startValue?.SEARCHVAL,
-              end: endValue?.SEARCHVAL,
-              startLat: startValue?.LATITUDE,
-              endLat: endValue?.LATITUDE,
-              startLon: startValue?.LONGITUDE,
-              endLon: endValue?.LONGITUDE,
-              filterData: {
-                durationWeight: filterWeights["time-taken"],
-                walkingDistanceWeight: filterWeights["amount-of-walking"],
-                noTransferWeight: filterWeights["number-of-transfers"],
-                carparkAvailabilityWeight: filterWeights["carpark-availability"],
-                busWaitTimeWeight: filterWeights["bus-wait-time"],
-                platformDensityWeight: filterWeights["crowd-level"],
-                fareWeight: filterWeights["fare-cost"],
-              }
-            })
-          });
-          const data = await response.json();
-          console.log(data);
-        }}>
-          Save Route
-        </button>
       </SidebarFooter>
 
       <SidebarRail />
     </Sidebar>
   )
 }
+
+// Backup of the save button code before refactor
+
+// <button onClick={async () => {
+//   if (!startValue || !endValue)
+//     return;
+//   const response = await fetch('/api/itineraries', {
+//     method: 'POST',
+//     headers: {
+//       'Content-Type': 'application/json'
+//     },
+//     body: JSON.stringify({
+//       start: startValue?.SEARCHVAL,
+//       end: endValue?.SEARCHVAL,
+//       startLat: startValue?.LATITUDE,
+//       endLat: endValue?.LATITUDE,
+//       startLon: startValue?.LONGITUDE,
+//       endLon: endValue?.LONGITUDE,
+//       filterData: {
+//         durationWeight: filterWeights["time-taken"],
+//         walkingDistanceWeight: filterWeights["amount-of-walking"],
+//         noTransferWeight: filterWeights["number-of-transfers"],
+//         carparkAvailabilityWeight: filterWeights["carpark-availability"],
+//         busWaitTimeWeight: filterWeights["bus-wait-time"],
+//         platformDensityWeight: filterWeights["crowd-level"],
+//         fareWeight: filterWeights["fare-cost"],
+//       }
+//     })
+//   });
+//   const data = await response.json();
+//   console.log(data);
+// }}>
+//   Save Route
+// </button>
+
+
+// Backup of the fetch routes button code before refactor
+
+// {!isCollapsed && (
+//   <div className="px-2 pt-4">
+//     {/* where the search is actually triggered ===================================*/}
+//     <Button
+//       className="w-full cursor-pointer"
+//       variant="outline"
+//       disabled={routeLoading || !startValue || !endValue}
+//       onClick={async () => {
+//         if ((!startValue || !endValue) && !itineraryFilter) {
+//           console.log(itineraryFilter);
+//           alert("Please select both start and end points first.");
+//           return;
+//         }
+//
+//         // Reset old error message
+//         setErrorMessage(null);
+//
+//         const filters = {
+//           durationWeight: filterWeights["time-taken"],
+//           walkingDistanceWeight: filterWeights["amount-of-walking"],
+//           noTransferWeight: filterWeights["number-of-transfers"],
+//           carparkAvailabilityWeight: filterWeights["carpark-availability"],
+//           busWaitTimeWeight: filterWeights["bus-wait-time"],
+//           platformDensityWeight: filterWeights["crowd-level"],
+//           fareWeight: filterWeights["fare-cost"],
+//         };
+//
+//         try {
+//           const appliedStart: [number, number] = itineraryFilter
+//             ? [itineraryFilter.start_lat, itineraryFilter.start_lon]
+//             : [parseFloat(startValue!.LATITUDE), parseFloat(startValue!.LONGITUDE)];
+//
+//           const appliedEnd: [number, number] = itineraryFilter
+//             ? [itineraryFilter.end_lat, itineraryFilter.end_lon]
+//             : [parseFloat(endValue!.LATITUDE), parseFloat(endValue!.LONGITUDE)];
+//           const appliedStartName = itineraryFilter ? itineraryFilter.start : startValue!.SEARCHVAL;
+//           const appliedEndName = itineraryFilter ? itineraryFilter.end : endValue!.SEARCHVAL;
+//           const result = await getItinerariesAndScore(
+//             appliedStart,
+//             appliedEnd,
+//             appliedStartName,
+//             appliedEndName,
+//             filters,
+//             driveType
+//           );
+//           setItineraryFilter(null);
+//
+//           // Handle invalid or empty responses
+//           if (
+//             !result ||
+//             (!result.best?.length &&
+//               !result.driving?.length &&
+//               !result.public?.length &&
+//               !result.walking?.length)
+//           ) {
+//             setErrorMessage("No possible routes found. Please try another location.");
+//             setRoutes({ best: [], driving: [], public: [], walking: [] });
+//           }
+//
+//         } catch (err) {
+//           console.error("Error fetching routes:", err);
+//           setErrorMessage("No possible routes found. Please try another location.");
+//           setRoutes({ best: [], driving: [], public: [], walking: [] });
+//           return;
+//         }
+//       }}
+//     >
+//       {routeLoading ? "Fetching Routes..." : "Get Routes"}
+//     </Button>
+//     {errorMessage && (
+//       <div className="flex flex-col items-center justify-center py-8 text-center text-red-400">
+//         <DatabaseIcon className="h-8 w-8 mb-2" />
+//         <p className="text-sm">{errorMessage}</p>
+//       </div>
+//     )}
+//     {/* end of where the search is actually triggered ===================================*/}
+//   </div>
+// )}
