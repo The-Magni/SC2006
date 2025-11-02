@@ -41,7 +41,12 @@ export async function drawPublicRoute(map: L.Map, data: PublicItineraryData): Pr
     const points = leg.geometry.map((p) => [p.lat, p.lng]) as [number, number][];
     allPoints.push(...points);
 
-    const poly = L.polyline(points, { color, weight: 4 }).addTo(map);
+    const poly = L.polyline(points, {
+    color: leg.mode === "WALK" ? "#ffffff" : color, // grey if walking
+    weight: leg.mode === "WALK" ? 3 : 4,
+    dashArray: leg.mode === "WALK" ? "6 8" : undefined, // dotted pattern for walking
+    opacity: 0.8,
+    }).addTo(map);
 
     // Compute segment midpoint
     const midIndex = Math.floor(points.length / 2);
@@ -59,7 +64,7 @@ export async function drawPublicRoute(map: L.Map, data: PublicItineraryData): Pr
             <b>${leg.mode.toUpperCase()} Segment</b><br>
             ${leg.description}<br>
             Duration: ${Math.round(leg.duration / 60)} min<br>
-            Distance: ${(leg.distance / 1000).toFixed(2)} km
+            Distance: ${(leg.distance / 1000).toFixed(2)} km<br>
             </div>
         `);
 
@@ -93,30 +98,48 @@ export async function drawPublicRoute(map: L.Map, data: PublicItineraryData): Pr
     });
 
     // Add start and destination markers
+  // === Start marker ===
     const firstLeg = data.legs[0];
-    const lastLeg = data.legs[data.legs.length - 1];
     if (firstLeg?.geometry.length) {
-        L.circleMarker([firstLeg.geometry[0].lat, firstLeg.geometry[0].lng], {
+        const start = firstLeg.geometry[0]; // ✅ same as original
+        const startCircle = L.circleMarker([start.lat, start.lng], {
         radius: 6,
         color: "#007AFF",
         fillColor: "#007AFF",
         fillOpacity: 0.8,
+        }).addTo(map);
+
+        const startPopup = L.popup({
+        autoClose: false,
+        closeOnClick: false,
+        closeButton: false,
+        offset: L.point(0, -10),
         })
-        .addTo(map)
-        .bindPopup("<b>Start of Journey</b>")
-        .openPopup();
+        .setLatLng([start.lat, start.lng])
+        .setContent("<b>Start of Journey</b>");
+        map.addLayer(startPopup);
     }
+
+    // === Destination marker ===
+    const lastLeg = data.legs[data.legs.length - 1];
     if (lastLeg?.geometry.length) {
-        const end = lastLeg.geometry[lastLeg.geometry.length - 1];
-        L.circleMarker([end.lat, end.lng], {
+        const end = lastLeg.geometry[lastLeg.geometry.length - 1]; // ✅ same as original
+        const endCircle = L.circleMarker([end.lat, end.lng], {
         radius: 6,
-        color: "#ff3b30",
-        fillColor: "#ff3b30",
+        color: "#FF3B30",
+        fillColor: "#FF3B30",
         fillOpacity: 0.8,
+        }).addTo(map);
+
+        const endPopup = L.popup({
+        autoClose: false,
+        closeOnClick: false,
+        closeButton: false,
+        offset: L.point(0, -10),
         })
-        .addTo(map)
-        .bindPopup("<b>Destination</b>")
-        .openPopup();
+        .setLatLng([end.lat, end.lng])
+        .setContent("<b>Destination</b>");
+        map.addLayer(endPopup);
     }
 
     if (allPoints.length > 0) map.fitBounds(allPoints, { padding: [40, 40] });

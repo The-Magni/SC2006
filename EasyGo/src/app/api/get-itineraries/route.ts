@@ -29,7 +29,6 @@ export async function GET(request: NextRequest) {
     const drivingItineraries: DrivingItinerary[] = [];
 
     if (driveType === "carpark") {
-        // 🚗 Existing behavior (with nearest carpark)
         const nearestCarpark = await controller.getNearestCarpark(end[0], end[1]);
         if (!nearestCarpark) {
         return NextResponse.json({
@@ -66,7 +65,6 @@ export async function GET(request: NextRequest) {
         drivingItineraries.push(drivingItinerary);
         }
     } else if (driveType === "direct") {
-        // 🚗 Simplified route: start → end, no carpark search
         const drivingData = await getRoute(start, end, "drive");
         const parsed = ItineraryController.parseResponse(drivingData, "drive") as DrivingItinerary[];
         drivingItineraries.push(...parsed);
@@ -81,10 +79,17 @@ export async function GET(request: NextRequest) {
         publicItineraries = [];
     }
 
+    let walkingItineraries: SimpleWalkingItinerary[] = [];
+    try{
+        const data = await getRoute(start, end, 'walk');
+        walkingItineraries = ItineraryController.parseResponse(data, 'walk') as SimpleWalkingItinerary[];
 
+    }catch(err){
+        console.error("Walking route failed:", err);
+        walkingItineraries = [];
+        
+    }
 
-    const data = await getRoute(start, end, 'walk');
-    const walkingItineraries = ItineraryController.parseResponse(data, 'walk') as SimpleWalkingItinerary[];
     // get bus wait time and plaform density for public itineraries
     await Promise.all(
         publicItineraries.map(async i => {
