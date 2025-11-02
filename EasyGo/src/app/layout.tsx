@@ -19,6 +19,8 @@ export const metadata: Metadata = {
   description: "SC2006 Project",
 };
 
+export const dynamic = 'force-dynamic'
+
 export default function RootLayout({
   children,
 }: Readonly<{
