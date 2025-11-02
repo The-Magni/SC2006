@@ -1,84 +1,240 @@
+#  EasyGo
 
-### Known Issues & Bugs
+Welcome to the official repository for NTU SC2006 / SC2002 Software Engineering group project **_EasyGo_**.
 
-These are issues we are actively working to resolve or features that are not yet fully functional:
+<p align='center'>
+  <img src="/public/logo.png" width=150 />
+</p>
 
-1.  **Public Transport Distance Inaccuracy:**
-    * The `public transport` distance metric currently only returns the **walking distance** component. It needs to be updated to reflect the full journey distance (including bus/train travel).
-2.  **Convenience Score Transparency:**
-    * The calculation and display of the **Convenience Score** needs to be made more transparent to the user, particularly concerning how the user-defined filter weights influence the final score.
-3.  **Map Overlays and Popups:**
-    * **Driving Route Overlap:** Driving routes are, by design, often visually close together (as they primarily differ by the assigned carpark). This causes their route popups on the map to **stack and overlap**
-4.  **Driving Route Card Information:**
-    * The **Driving Route Card** needs enhancement to explicitly include the **assigned carpark details** (name, distance, etc.).
-    * We also need to implement functionality to **display or highlight the chosen carpark** on the map when a driving route is selected.
-5.  **Certain start, end locations issues**
+<p align="center">
+    <a href="https://github.com/yourusername/easygo/tree/main/frontend">Frontend</a>
+    |
+    <a href="https://github.com/yourusername/easygo/tree/main/backend">Backend</a>
+    |
+    <a href="https://easygo.jtsy.dev">Live Demo</a>
+</p>
 
-    *Locations Known to work:
-    Yew Tee MRT Station > Harbourfront MRT Station
-    Compass One > Serangoon Nex
+**EasyGo** is a **smart transport and convenience planner** that helps users find the **most optimal route based on overall comfort over just speed**.  
+By integrating **real-time public transport, bus wait timings, carpark... data**, EasyGo computes a personalized **Convenience Score** that balances time, cost, walking distance, and live conditions.  
+Built with **Next.js + TypeScript**, with **scalability, modularity, and strong software engineering practices**  in mind.
 
-    *Fail
-    Chua Chu Kang Hindu Cemetry > The Japanese Cemetry Park
-
-    * Some areas will fail to generate routes if bus data is unable to generate (critical)
-    * either through bus timing / other reasons. will need to handle such empty edge casesxz.
 ---
 
-### Work In Progress (WIP)
+<details>
+<summary>🌐 Live Demo</summary>
+<br>
 
-1.  **User Authentication:**
-    * Implementing **Login/Signup** functionality.
-    * Enabling users to **save and retrieve preferred routes**.
-2.  **Map Integration for Public Transport:**
-    * Developing a **custom popup for public transport routes** on the map =
-3.  **Route Calculation Logic Refactor (Optimization):**
-    * Refactoring the `getRoute` logic to optimize performance. The plan is to **only calculate the Convenience Score on saved or selected routes**, rather than re-calculating all possible scores every time the initial routes are fetched.
+**URL:** [https://easygo.jtsy.dev](https://easygo.jtsy.dev)  
+> The app is currently hosted online
 
-Test on public domain
-https://easygo.jtsy.dev/
+</details>
 
-.env.local is setup temporarily for convenience
-```
-## Getting Started
+<details>
+<summary>📄 Supporting Documents</summary>
+<br>
 
-Firstly
+1. [System Design & Architecture](link_here)
+2. [Class & Sequence Diagrams](link_here)
+3. [UI Mockups / Wireframes](link_here)
+4. [Software Requirements Specification](link_here)
+
+</details>
+
+<details>
+<summary>🧩 Diagrams</summary>
+<br>
+
+1. [System Architecture Diagram](link_here)
+2. [Use Case Diagram](link_here)
+3. [Class Diagram](link_here)
+4. [Sequence Diagram](link_here)
+5. [Data Flow Diagram](link_here)
+
+</details>
+
+---
+
+## ⚙️ Setup Instructions
+
+### 🖥️ Running the Website
+
+1. Navigate to the `/EasyGo` directory.
+   ```bash
+   npm install
+   npm run dev
+   ```
+2. The website will be running on:  
+   👉 [http://localhost:3000](http://localhost:3000)
+
+### 🌍 Environment Variables
+
+Create a `.env.local` file in the root directory:
 
 ```bash
-npm install
+NEXT_PUBLIC_ONEMAP_API_KEY=
+NEXT_PUBLIC_LTA_DATAMALL_KEY=
+NEXT_PUBLIC_NEA_WEATHER_URL=
 ```
 
-Secondly, run the development server:
+---
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+## 🧭 Project Overview
+
+**Goal:**  
+To develop a web application that consolidates multiple transport and environmental data sources to compute a **“Convenience Score”**, helping users select routes that best fit their preferences and live conditions.
+
+## 🚀 Features
+
+| Category | Description |
+|-----------|--------------|
+| **Authentication** | Supports **Driving**, **Public Transport**, and **Walking** via the OneMap Routing API. |
+| **Convenience Scoring System** | Calculates a **customized score** based on weighted user preferences (time, walking distance, fare cost, carpark availability, etc.). |
+| **Real-Time Data Integration** | Uses **OneMap**, **LTA DataMall**, and **NEA Weather** APIs for live conditions. |
+| **Interactive Map Visualization** | Visualized using **Leaflet.js** with custom popups, carpark overlays, and selectable route layers. |
+| **Route Generation** | Developed entirely in **TypeScript** with strict mode — ensuring high code reliability and reusability. |
+| **Route Specfic Information Display** | Extensible architecture supports future modes (cycling, car-sharing) with minimal modification. |
+| **Save Route / Locations** | Extensible architecture supports future modes (cycling, car-sharing) with minimal modification. |
+## 🧠 App Design
+
+### **Overview**
+EasyGo adopts a **Layered / MVC Architecture**, separating the application into distinct layers for maintainability and scalability.
+
+```
+Frontend (View)
+  ├── React Components (Sidebar for Location Search, Save Routes, Login Page)
+  │     ...etc
+Controllers (Logic Layer)
+  ├── ItineraryController
+  ├── ScoreCalculator 
+  ├── AuthController
+  │     ...etc
+Data Layer (Model)
+  ├── BaseItinerary
+  ├── RouteLeg
+  ├── Various API Response Classes
+        ...etc
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/do 
 
 
+---
+
+### **Frontend**
+- Built with **Next.js + TypeScript + TailwindCSS + ShadCN + MUI**
+- Pages under `/app/` serve as entry routes
+- `/components/` contains reusable UI elements (Map, RouteCards, Charts)
+- `/controllers/` manages API orchestration and data logic
+- `/api/` provides backend logic (serverless API routes)
+
+### **Backend / API Layer**
+- Next.js API routes serve as the backend
+- Integrates external APIs (OneMap, LTA, NEA)
+- Controllers abstract logic and serve the frontend (facade pattern)
+
+---
+
+## 🧩 Design Patterns
+
+| Pattern | Purpose | Implementation |
+|----------|----------|----------------|
+| **Strategy Pattern** | Allows flexible scoring algorithms | `ScoreCalculator` dynamically switches between time-based, cost-based, or hybrid weighting |
+| **Factory Pattern** | Centralizes object creation and selects the correct scoring strategy based on itinerary type | ConvenienceScoreFactory.create() instantiates a ConvenienceScore with the appropriate scoring strategy (e.g., WalkingScoring, PublicScoring, DrivingScoring) |
+| **Observer Pattern** | Automatic UI update on data change | React state/hooks trigger re-renders when filters or data update |
+
+
+---
+
+## 🧱 SOLID Principles
+
+1. **Single Responsibility Principle (SRP)**  
+   Each controller or service handles one concern (e.g., routing, weather, scoring).
+2. **Open–Closed Principle (OCP)**  
+   Easily extendable for new route types or scoring strategies without modifying existing code.
+4. **Interface Segregation Principle (ISP)**  
+   Each data type (Route, Carpark, Weather) uses its own lightweight interface.
+5. **Dependency Inversion Principle (DIP)**  
+   Controllers depend on abstractions (interfaces), not concrete service implementations.
+
+---
+
+## 🧰 Tech Stack
+
+**Frontend:**
+- Next.js (React + TypeScript)
+- Tailwind CSS
+- Leaflet.js
+- MUI 
+
+**Backend / API:**
+- Next.js API Routes
+- Node.js
+- Supabase (Database)
+
+**External APIs:**
+- OneMap Routing API
+- LTA DataMall (Carpark availability)
+- NEA Weather API
+- data.gov.sg
+
+**Tools:**
+- GitHub for version control and collaboration
+
+
+---
+
+## 🧠 Software Engineering Practices
+
+| Practice | Description |
+|-----------|-------------|
+| **TypeScript** | Ensures strong typing, avoids ```any``` except in well-justified fallback cases |
+| **Code Consistency** | ESLint + Prettier  |
+| **Reusable Components** | Modular UI components and hooks for map and routing. |
+| **Interface-Driven Design** | Interfaces defines contracts between modules. |
+
+---
+
+
+## 📋 Future Enhancements
+
+- [ ] MRT incident alert integration  
+- [ ] Predictive congestion scoring  
+- [ ] Accessibility improvements  
+- [ ] Enhanced map interactivity
+- [ ] Accept Cycle type alongside Walking
+- [ ] Optimise Carpark route generation
+
+
+---
+
+## 🌍 External APIs
+
+1. **OneMap API**
+   - Routing & geocoding endpoints  
+   - [https://www.onemap.gov.sg/docs/](https://www.onemap.gov.sg/docs/)
+2. **LTA DataMall**
+   - Carpark availability  
+   - [https://datamall.lta.gov.sg/](https://datamall.lta.gov.sg/)
+3. **NEA Weather API**
+   - 24-hour weather forecast  
+   - [https://data.gov.sg](https://data.gov.sg)
+
+---
+
+## 🧑‍💻 Contributors
+
+| Name | Github Username | 
+|------|------|
+| [Team Name] | b | 
+| [Teammate 1] | b| 
+| [Teammate 2] | b | 
+| [Teammate 3] | b | 
+
+---
+
+
+## 🧩 Acknowledgements
+
+- **OneMap**, **LTA DataMall**, and **data.gov** for external APIs  
+
+
+---
