@@ -293,10 +293,10 @@ export class ItineraryController {
 					const key = `${incident.Type}-${incident.Message.trim()}`;
 					if (uniqueIncidents.has(key)) continue; 
 					// quick bounding-box filter first (1 km range)
-					const minLat = Math.min(coords[i][0], coords[i + 1][0]) - 0.01; 
-					const maxLat = Math.max(coords[i][0], coords[i + 1][0]) + 0.01;
-					const minLon = Math.min(coords[i][1], coords[i + 1][1]) - 0.01;
-					const maxLon = Math.max(coords[i][1], coords[i + 1][1]) + 0.01;
+					const minLat = Math.min(coords[i][0], coords[i + 1][0]) - 0.003; 
+					const maxLat = Math.max(coords[i][0], coords[i + 1][0]) + 0.003;
+					const minLon = Math.min(coords[i][1], coords[i + 1][1]) - 0.003;
+					const maxLon = Math.max(coords[i][1], coords[i + 1][1]) + 0.003;
 
 					if (
 					incident.Latitude >= minLat &&
