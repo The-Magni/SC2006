@@ -59,7 +59,7 @@ export async function drawPublicRoute(map: L.Map, data: PublicItineraryData): Pr
             <b>${leg.mode.toUpperCase()} Segment</b><br>
             ${leg.description}<br>
             Duration: ${Math.round(leg.duration / 60)} min<br>
-            Distance: ${(leg.distance / 1000).toFixed(2)} km
+            Distance: ${(leg.distance / 1000).toFixed(2)} km<br>
             </div>
         `);
 

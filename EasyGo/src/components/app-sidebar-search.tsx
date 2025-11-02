@@ -17,7 +17,7 @@ import { ConvenienceFilter, GetItinerariesResponse, useItineraryData } from "@/h
 import { useDebounce } from "use-debounce"
 import type { Incident } from "@/lib/boundary/ExternalApiHandler"
 // Polyline drawing imports
-import { BaseItineraryData, DrivingItineraryData, ItineraryData} from "@/lib/controllers/Parser";
+import { BaseItineraryData, DrivingItineraryData, ItineraryData, PublicItineraryData} from "@/lib/controllers/Parser";
 import { drawItineraryLine } from "@/lib/controllers/leaflet/leaflethelper-controller";
 import { useUser } from "@/hooks/useUser";
 import { useSelectedItinerary } from "@/app/provider";
@@ -136,6 +136,8 @@ const RouteCard = ({
     legs: Leg[];
     weather: string;
     incidents: Incident[];
+    totalFare?: number;
+    totalTransfers?: number;
   };
   onClick: () => void;
 }) => {
@@ -205,6 +207,30 @@ const RouteCard = ({
             </details>
           )}
         </div>
+
+        {/* Total Fare */}
+        {route.type === "PublicItinerary" && (
+          <div className="flex gap-4 px-4 mt-4">
+            {typeof route.totalFare === "number" && route.totalFare > 0 && (
+              <div className="flex-1 rounded-lg border border-emerald-800/30 bg-emerald-900/10 p-3">
+                <h4 className="font-semibold text-emerald-300 mb-1">Total Fare</h4>
+                <p className="text-emerald-100 leading-relaxed ml-1">
+                  ${route.totalFare.toFixed(2)}
+                </p>
+              </div>
+            )}
+        {/* Total Transfers */}
+            {typeof route.totalTransfers === "number" && route.totalTransfers > 0 && (
+              <div className="flex-1 rounded-lg border border-purple-800/30 bg-purple-900/10 p-3">
+                <h4 className="font-semibold text-purple-300 mb-1">Transfers</h4>
+                <p className="text-purple-100 leading-relaxed ml-1">
+                  {route.totalTransfers}
+                </p>
+              </div>
+            )}
+          </div>
+        )}
+
 
         {/* Start Pin */}
         <div className="flex items-center gap-6 ml-7 mt-3 mb-2">
@@ -845,6 +871,14 @@ export function AppSidebarSearch({ options, loading, debouncedFetch, setOptions,
                               legs: r.itinerary.data.legs,
                               weather: r.itinerary.data.weather || "",
                               incidents: r.itinerary.data.incidents || [],
+                              totalFare:
+                                r.itinerary.mode === "PublicItinerary"
+                                  ? (r.itinerary.data as PublicItineraryData).totalFare
+                                  : 0,
+                              totalTransfers:
+                                r.itinerary.mode === "PublicItinerary"
+                                  ? (r.itinerary.data as PublicItineraryData).totalTransfers
+                                  : 0,
                             }}
                             onClick={() => handleRouteClick(r.itinerary)}
                           />

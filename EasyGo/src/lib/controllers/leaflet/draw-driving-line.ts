@@ -68,10 +68,12 @@ export async function drawDrivingRoute(map: L.Map, data: DrivingItineraryData) {
                 });
             }
         }
-
+    const popupDescription =   data.nearestCarpark && !(data.nearestCarpark.lat === 0 && data.nearestCarpark.lng === 0)
+        ? `<b>🚗 Driving Route</b><br><b>to ${data.nearestCarpark.name} Carpark</b><br>${(data.totalDistance / 1000).toFixed(1)} km • ${(data.totalDuration / 60).toFixed(0)} min`
+        : `<b>🚗 Driving Route (Direct)</b><br>${(data.totalDistance / 1000).toFixed(1)} km • ${(data.totalDuration / 60).toFixed(0)} min`;
     poly
         .bindPopup(
-        `<b>🚗 Driving Route</b><br><b>to ${data.nearestCarpark.name} Carpark</b><br/>${(data.totalDistance / 1000).toFixed(1)} km • ${(data.totalDuration / 60).toFixed(0)} min`
+            popupDescription
         , {
             autoClose: false,
             closeOnClick: false,
