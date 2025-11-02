@@ -21,6 +21,7 @@ export interface ItineraryFilter {
   start_lat: number;
   start_lon: number;
   user_id: string;
+  name: string | null;
   filters: {
     bus_wait_time: number;
       carpark_availability: number;
@@ -46,11 +47,13 @@ interface SavedRouteCardProps {
 }
 
 const SavedRouteCard: React.FC<SavedRouteCardProps> = ({ route, onClick, onDelete}) => {
-  const handleRename = () => {
+  const handleRename = (e: React.MouseEvent<HTMLElement>) => {
+    e.stopPropagation();
     console.log(`Renaming route: ${route.name}`);
   };
 
-  const handleDelete = async () => {
+  const handleDelete = async (e: React.MouseEvent<HTMLElement>) => {
+    e.stopPropagation();
     const response = await fetch(`/api/itineraries/${route.id}`, {
       method: 'DELETE'
     });
@@ -177,10 +180,10 @@ export function AppSidebarRoutes({ ...props }: React.ComponentProps<typeof Sideb
             {!isCollapsed && (
               savedRoutes.map((route, index) => (
                 <SavedRouteCard
-                  key={index}
+                  key={route.id}
                   route={{
                     id: route.id,
-                    name: `My Favourite Route ${index+1}`,
+                    name: route.name || `My Favourite Route ${index+1}`,
                     start: route.start,
                     end: route.end 
                   }}
