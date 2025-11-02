@@ -84,8 +84,12 @@ export async function GET(req: Request) {
     // If success
     console.log("OneMap response received successfully.")
     return NextResponse.json(JSON.parse(text))
-  } catch (err: any) {
-    console.error("Route API error:", err)
-    return NextResponse.json({ error: err.message }, { status: 500 })
+  } catch (err) {
+    if (err instanceof Error) {
+      console.error("Route API error:", err)
+      return NextResponse.json({ error: err.message }, { status: 500 });
+    } else {
+      return NextResponse.json({ error: 'Unknown' }, { status: 500});
+    }
   }
 }

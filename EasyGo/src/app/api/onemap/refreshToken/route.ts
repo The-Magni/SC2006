@@ -42,11 +42,18 @@ export async function GET() {
     console.log("Token refreshed and cached")
 
     return NextResponse.json(tokenData, { status: 200 })
-  } catch (err: any) {
-    console.error("Token refresh error:", err)
-    return NextResponse.json(
-      { error: err.message ?? "Unknown token refresh error" },
-      { status: 500 }
-    )
+  } catch (err) {
+    if (err instanceof Error) {
+      console.error("Token refresh error:", err)
+      return NextResponse.json(
+        { error: err.message ?? "Unknown token refresh error" },
+        { status: 500 }
+      );
+    } else {
+      return NextResponse.json(
+        {error: 'Unknown'},
+        { status: 500}
+      );
+    }
   }
 }
