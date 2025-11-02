@@ -10,7 +10,7 @@ import { Slider } from "@/components/ui/slider"
 import { NavUser } from "@/components/nav-user"
 import Autocomplete from "@mui/material/Autocomplete";
 import TextField from "@mui/material/TextField";
-import { Star, Car, Bus, Footprints, Circle, MapPinIcon, ListFilterIcon, Bookmark, LucideIcon, Loader2, DatabaseIcon } from "lucide-react";
+import { Star, Car, Bus, Footprints, Circle, MapPinIcon, ListFilterIcon, LucideIcon, Loader2, DatabaseIcon } from "lucide-react";
 import { OneMapSearchResult } from "@/lib/onemap/onemapAutoFill";
 import type { MapDisplayHandle } from "@/components/map-display";
 import { ConvenienceFilter, GetItinerariesResponse, useItineraryData } from "@/hooks/itinerary-data"
@@ -35,7 +35,7 @@ type SidebarSearchProps = {
   
 };
 
-// This is sample data.D
+// This is sample data.
 const data = {
   user: {
     name: "shadcn",
@@ -185,44 +185,38 @@ const RouteCard = ({
       {/* This is the content, it shows the step-by-step details.
       */}
       <AccordionContent className="p-0">
-<div className="ml-7 mr-4 mt-3 space-y-3 text-sm">
+        <div className="ml-7 mr-4 mt-3 space-y-3 text-sm">
+          {/* Weather */}
+          {route.weather && (
+            <div className="rounded-lg border border-blue-800/30 bg-blue-900/10 p-3">
+              <h4 className="font-semibold text-blue-300 mb-1">Weather</h4>
+              <p className="text-blue-100 leading-relaxed ml-1">{route.weather}</p>
+            </div>
+          )}
 
-  {/* Weather */}
-  {route.weather && (
-    <div className="rounded-lg border border-blue-800/30 bg-blue-900/10 p-3">
-      <h4 className="font-semibold text-blue-300 mb-1">Weather</h4>
-      <p className="text-blue-100 leading-relaxed ml-1">{route.weather}</p>
-    </div>
-  )}
+          {/* Traffic Incidents */}
+          {route.type === "DrivingItinerary" && route.incidents?.length > 0 && (
+            <details className="group rounded-lg border border-red-800/30 bg-red-900/10 p-3">
+              <summary className="cursor-pointer font-semibold text-red-300 flex items-center justify-between">
+                Nearby Traffic Incidents ({route.incidents.length})
+                <span className="text-red-400 group-open:rotate-90 transition-transform">›</span>
+              </summary>
+              <ul className="mt-2 list-disc list-inside space-y-1 text-red-100 leading-relaxed ml-2">
+                {route.incidents.map((incident, idx) => (
+                  <li key={idx}>
+                    <span className="font-medium">{incident.Type}</span>: {incident.Message}
+                  </li>
+                ))}
+              </ul>
+            </details>
+          )}
+        </div>
 
-  {/* Traffic Incidents */}
-  {route.type === "DrivingItinerary" && route.incidents?.length > 0 && (
-    <details className="group rounded-lg border border-red-800/30 bg-red-900/10 p-3">
-      <summary className="cursor-pointer font-semibold text-red-300 flex items-center justify-between">
-        Nearby Traffic Incidents ({route.incidents.length})
-        <span className="text-red-400 group-open:rotate-90 transition-transform">›</span>
-      </summary>
-      <ul className="mt-2 list-disc list-inside space-y-1 text-red-100 leading-relaxed ml-2">
-        {route.incidents.map((incident, idx) => (
-          <li key={idx}>
-            <span className="font-medium">{incident.Type}</span>: {incident.Message}
-          </li>
-        ))}
-      </ul>
-    </details>
-  )}
-</div>
-
-{/* Start Pin */}
-<div className="flex items-center gap-6 ml-7 mt-3 mb-2">
-  <Circle className="h-4 w-4 text-white" />
-  <h4 className="font-semibold">Start</h4>
-</div>
-
-
-
-
-
+        {/* Start Pin */}
+        <div className="flex items-center gap-6 ml-7 mt-3 mb-2">
+          <Circle className="h-4 w-4 text-white" />
+          <h4 className="font-semibold">Start</h4>
+        </div>
 
         {/* Itinerary Legs */}
         {route.legs.map((leg, index) => (
@@ -256,14 +250,10 @@ export function AppSidebarSearch({ options, loading, debouncedFetch, setOptions,
   const [filterWeights, setFilterWeights] = useState<Record<string, number>>(initialFilterWeights);
   const [debouncedFilters] = useDebounce(filterWeights, 800);
   const [isRecalculating, setIsRecalculating] = useState(false);
-  const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
   const {state} = useSidebar();
   const isCollapsed = state === "collapsed"
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [driveType, setDriveType] = useState<"carpark" | "direct">("carpark");
-
-  // Temporary button state
-  const [isToggled, setIsToggled] = useState(false);
   const {routes: routeResults, loading: routeLoading, getItinerariesAndScore, getScore, setRoutes } = useItineraryData()
 
   // Handle filter value changes
@@ -274,14 +264,6 @@ export function AppSidebarSearch({ options, loading, debouncedFetch, setOptions,
     }));
   };
 
-  // Uncomment once bug is fixed
-  /*
-  routes[selectedMode].map((route) => {
-    // Update route.score here
-    // route.score = filterWeights["time-taken"] * 2;
-  })
-  */
-
   const prevFilters = React.useRef<Record<string, number>>(filterWeights);
   useEffect(() => {
     if (!routeResults) return;
@@ -289,11 +271,11 @@ export function AppSidebarSearch({ options, loading, debouncedFetch, setOptions,
     if (JSON.stringify(prevFilters.current) === JSON.stringify(debouncedFilters)) {
       return; // If no change, don't spam the API
     }
-      prevFilters.current = debouncedFilters; 
-      const controller = new AbortController();
-      setIsRecalculating(true);
+    prevFilters.current = debouncedFilters;
+    const controller = new AbortController();
+    setIsRecalculating(true);
 
-      const filtersForBackend: ConvenienceFilter = {
+    const filtersForBackend: ConvenienceFilter = {
       durationWeight: debouncedFilters["time-taken"],
       walkingDistanceWeight: debouncedFilters["amount-of-walking"],
       noTransferWeight: debouncedFilters["number-of-transfers"],
@@ -318,7 +300,7 @@ export function AppSidebarSearch({ options, loading, debouncedFetch, setOptions,
         const processedScores = {
           ...newScores,
 
-        best: newScores.best.map((r) => {
+          best: newScores.best.map((r) => {
             const mode = r.itinerary.mode.toLowerCase();
             const data = r.itinerary.data;
 
@@ -369,12 +351,12 @@ export function AppSidebarSearch({ options, loading, debouncedFetch, setOptions,
                     description:
                       leg.mode === "WALK"
                         ? `Walk from ${
-                            "nearestCarpark" in data
-                              ? (data as DrivingItineraryData).nearestCarpark?.name ?? "nearest carpark"
-                              : "nearest carpark"
-                          } to ${endValue?.SEARCHVAL ?? "Destination"} (${(
-                            leg.distance / 1000
-                          ).toFixed(2)} km)`
+                          "nearestCarpark" in data
+                            ? (data as DrivingItineraryData).nearestCarpark?.name ?? "nearest carpark"
+                            : "nearest carpark"
+                        } to ${endValue?.SEARCHVAL ?? "Destination"} (${(
+                          leg.distance / 1000
+                        ).toFixed(2)} km)`
                         : leg.description,
                   })),
                 },
@@ -395,8 +377,8 @@ export function AppSidebarSearch({ options, loading, debouncedFetch, setOptions,
                     description:
                       leg.mode === "WALK"
                         ? `Walk from ${startValue?.SEARCHVAL ?? "Origin"} to ${
-                            endValue?.SEARCHVAL ?? "Destination"
-                          } (${(leg.distance / 1000).toFixed(2)} km)`
+                          endValue?.SEARCHVAL ?? "Destination"
+                        } (${(leg.distance / 1000).toFixed(2)} km)`
                         : leg.description,
                   })),
                 },
@@ -406,17 +388,14 @@ export function AppSidebarSearch({ options, loading, debouncedFetch, setOptions,
         };
 
         setRoutes(processedScores);
-//==============================================================
-
+        //==============================================================
       } catch (err) {
         console.error("Error updating scores:", err);
       } finally {
         setIsRecalculating(false);
       }
-    }
-  )();
-      return () => controller.abort();
-
+    })();
+    return () => controller.abort();
   }, [debouncedFilters, routeResults, startValue, endValue, getScore, setRoutes]);
   
   // Handle route card click to draw polyline on map
@@ -499,7 +478,6 @@ export function AppSidebarSearch({ options, loading, debouncedFetch, setOptions,
                       setStartValue(newValue);
                     }
                   }}
-
 
                   // Formats the output of the dropdown list from the OneMapSearchResult type
                   renderOption={(props, option) => {
@@ -594,7 +572,6 @@ export function AppSidebarSearch({ options, loading, debouncedFetch, setOptions,
                     }
                   }}
 
-
                   // Formats the output of the dropdown list from the OneMapSearchResult type
                   renderOption={(props, option) => {
                     const {key, ...restProps} = props;
@@ -654,41 +631,39 @@ export function AppSidebarSearch({ options, loading, debouncedFetch, setOptions,
               </div>
             )}
 
-              {!isCollapsed && (
-                  <div className="px-2 pt-3">
-                    <div className="flex items-center justify-between bg-[#121212] border border-white/10 rounded-lg px-4 py-2">
-                      <span className="text-sm text-white">Driving Mode</span>
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => setDriveType("carpark")}
-                          className={`text-xs px-3 py-1 rounded-md transition-colors ${
-                            driveType === "carpark"
-                              ? "bg-blue-500 text-white"
-                              : "bg-gray-800 text-gray-300 hover:bg-gray-700"
-                          }`}
-                        >
-                          To Carpark
-                        </button>
-                        <button
-                          onClick={() => setDriveType("direct")}
-                          className={`text-xs px-3 py-1 rounded-md transition-colors ${
-                            driveType === "direct"
-                              ? "bg-blue-500 text-white"
-                              : "bg-gray-800 text-gray-300 hover:bg-gray-700"
-                          }`}
-                        >
-                          Direct
-                        </button>
-                      </div>
-                    </div>
+            {!isCollapsed && (
+              <div className="px-2 pt-3">
+                <div className="flex items-center justify-between bg-[#121212] border border-white/10 rounded-lg px-4 py-2">
+                  <span className="text-sm text-white">Driving Mode</span>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => setDriveType("carpark")}
+                      className={`text-xs px-3 py-1 rounded-md transition-colors ${
+                        driveType === "carpark"
+                          ? "bg-blue-500 text-white"
+                          : "bg-gray-800 text-gray-300 hover:bg-gray-700"
+                      }`}
+                    >
+                      To Carpark
+                    </button>
+                    <button
+                      onClick={() => setDriveType("direct")}
+                      className={`text-xs px-3 py-1 rounded-md transition-colors ${
+                        driveType === "direct"
+                          ? "bg-blue-500 text-white"
+                          : "bg-gray-800 text-gray-300 hover:bg-gray-700"
+                      }`}
+                    >
+                      Direct
+                    </button>
                   </div>
-                )}
+                </div>
+              </div>
+            )}
 
-
-
-                        {!isCollapsed && (
+            {!isCollapsed && (
               <div className="px-2 pt-4">
-              {/* where the search is actually triggered ===================================*/}
+                {/* where the search is actually triggered ===================================*/}
                 <Button
                   className="w-full cursor-pointer"
                   variant="outline"
@@ -713,45 +688,46 @@ export function AppSidebarSearch({ options, loading, debouncedFetch, setOptions,
                     };
 
                     try {
-                        const result = await getItinerariesAndScore(
-                          [parseFloat(startValue.LATITUDE), parseFloat(startValue.LONGITUDE)],
-                          [parseFloat(endValue.LATITUDE), parseFloat(endValue.LONGITUDE)],
-                          startValue.SEARCHVAL,
-                          endValue.SEARCHVAL,
-                          filters,
-                          driveType
-                        );
+                      const result = await getItinerariesAndScore(
+                        [parseFloat(startValue.LATITUDE), parseFloat(startValue.LONGITUDE)],
+                        [parseFloat(endValue.LATITUDE), parseFloat(endValue.LONGITUDE)],
+                        startValue.SEARCHVAL,
+                        endValue.SEARCHVAL,
+                        filters,
+                        driveType
+                      );
 
-                        // Handle invalid or empty responses
-                        if (
-                          !result ||
-                          (!result.best?.length &&
+                      // Handle invalid or empty responses
+                      if (
+                        !result ||
+                        (!result.best?.length &&
                           !result.driving?.length &&
                           !result.public?.length &&
                           !result.walking?.length)
-                        ) {
-                          setErrorMessage("No possible routes found. Please try another location.");
-                          setRoutes({ best: [], driving: [], public: [], walking: [] });
-                        }
-
-                      } catch (err) {
-                        console.error("Error fetching routes:", err);
+                      ) {
                         setErrorMessage("No possible routes found. Please try another location.");
                         setRoutes({ best: [], driving: [], public: [], walking: [] });
-                        return; 
                       }
-                    }}
-                      >
-                    {routeLoading ? "Fetching Routes..." : "Get Routes"}
-                  </Button>
-                    {errorMessage && (
-                      <div className="flex flex-col items-center justify-center py-8 text-center text-red-400">
-                        <DatabaseIcon className="h-8 w-8 mb-2" />
-                        <p className="text-sm">{errorMessage}</p>
-                      </div>
-                    )}
-              {/* end of where the search is actually triggered ===================================*/}
-            </div>)}
+
+                    } catch (err) {
+                      console.error("Error fetching routes:", err);
+                      setErrorMessage("No possible routes found. Please try another location.");
+                      setRoutes({ best: [], driving: [], public: [], walking: [] });
+                      return;
+                    }
+                  }}
+                >
+                  {routeLoading ? "Fetching Routes..." : "Get Routes"}
+                </Button>
+                {errorMessage && (
+                  <div className="flex flex-col items-center justify-center py-8 text-center text-red-400">
+                    <DatabaseIcon className="h-8 w-8 mb-2" />
+                    <p className="text-sm">{errorMessage}</p>
+                  </div>
+                )}
+                {/* end of where the search is actually triggered ===================================*/}
+              </div>
+            )}
 
             {!isCollapsed && (
               <div className="px-2 pt-4">
@@ -775,8 +751,6 @@ export function AppSidebarSearch({ options, loading, debouncedFetch, setOptions,
                 </Accordion>
               </div>
             )}
-
-
           </SidebarGroupContent>
         </SidebarGroup>
                     
