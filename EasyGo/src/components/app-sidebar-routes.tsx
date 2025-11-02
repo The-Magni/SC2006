@@ -36,20 +36,27 @@ export interface ItineraryFilter {
 
 interface SavedRouteCardProps {
   route: {
+    id: string;
     name: string;
     start: string;
     end: string;
   };
   onClick?: () => void;
+  onDelete: () => void;
 }
 
-const SavedRouteCard: React.FC<SavedRouteCardProps> = ({ route, onClick}) => {
+const SavedRouteCard: React.FC<SavedRouteCardProps> = ({ route, onClick, onDelete}) => {
   const handleRename = () => {
     console.log(`Renaming route: ${route.name}`);
   };
 
-  const handleDelete = () => {
-    console.log(`Deleting route: ${route.name}`);
+  const handleDelete = async () => {
+    const response = await fetch(`/api/itineraries/${route.id}`, {
+      method: 'DELETE'
+    });
+    const data = await response.json();
+    console.log(data);
+    onDelete();
   };
 
   return (
@@ -169,11 +176,15 @@ export function AppSidebarRoutes({ ...props }: React.ComponentProps<typeof Sideb
                 <SavedRouteCard
                   key={index}
                   route={{
+                    id: route.id,
                     name: `My favourite route ${index+1}`,
                     start: route.start,
                     end: route.end 
                   }}
                   onClick={() => handleClick(route)}
+                  onDelete={() => {
+                    setSavedRoutes(prev => prev.filter(r => r.id !== route.id));
+                  }}
                 />
               ))
             )}

@@ -1,10 +1,10 @@
 import { createClient } from "@/utils/supabase/server";
 import { NextResponse } from "next/server";
 
-export async function DELETE({ params }: { params: { id: string } }) {
+export async function DELETE(request: Request, context: { params: { id: string } }) {
     try {
         const supabase = await createClient();
-        const { id } = params;
+        const { id } = await context.params;
         const { data: { user }} = await supabase.auth.getUser();
         if (!id)
             throw new Error('ID is not provided');

@@ -73,12 +73,39 @@ export async function logout() {
     redirect('/?layout=login');
 }
 
-export async function resetPassword(formData: FormData) {
+
+export async function updatePersonal(formData: FormData) {
+    const supabase = await createClient();
+	const name = formData.get('name') as string;
+	const { data: { user } } = await supabase.auth.getUser();
+    if (!user || !user.email)
+        throw new Error('Unauthorized');
+	const { data, error } = await supabase
+	.from('users')
+	.update({name: name})
+	.eq('id', user.id);
+	if (error)
+		console.error(error);
+}
+
+
+export async function updatePassword(current: string, newPass: string) {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user || !user.email)
         throw new Error('Unauthorized');
-    await supabase.auth.resetPasswordForEmail(user.email, {
-        redirectTo: '/reset-password'
-    });
+	const { data, error: checkPwError } = await supabase.auth.signInWithPassword({
+		email: user.email,
+		password: current,
+	});
+	if (checkPwError)
+		throw new Error('Wrong current password');
+
+    const { error } = await supabase.auth.updateUser({
+		password: newPass
+	});
+	if (error) {
+		console.error(error);
+		throw new Error('Unsuccessful password update');
+	}
 }

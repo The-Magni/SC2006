@@ -1,3 +1,5 @@
+"use client"
+
 import { useState } from "react";
 import { Key } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -7,8 +9,11 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { updatePersonal, updatePassword } from "@/lib/controllers/AuthController";
+import { useUser } from "@/hooks/useUser";
 
 export default function ProfileContent() {
+  const profile = useUser();
   const [open, setOpen] = useState(false);
 
   // ----- form state (you can hook this up to your backend later) -----
@@ -17,7 +22,7 @@ export default function ProfileContent() {
   const [confirm, setConfirm] = useState("");
   const [error, setError] = useState("");
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (newPass === current) {
       setError("New password must be different");
       return;
@@ -30,9 +35,16 @@ export default function ProfileContent() {
     // ----- YOUR API CALL HERE -----
     // await changePassword({ current, new: newPass });
     // ---------------------------------
-
-    setError("");
-    setOpen(false);
+    try {
+      await updatePassword(current, newPass);
+      setError("");
+      setOpen(false);
+    } catch (error) {
+      if (error instanceof Error)
+        setError(error.message);
+      else
+        setError('Unknown error');
+    }
   };
 
   return (
@@ -51,19 +63,21 @@ export default function ProfileContent() {
           </CardHeader>
           <CardContent className="space-y-6">
             <Separator />
-            <div className="space-y-2">
-              <Label htmlFor="name">Full Name</Label>
-              <Input id="name" defaultValue="John Doe" />
-            </div>
+            <form>
+              <div className="space-y-2">
+                <Label htmlFor="name">Full Name</Label>
+                <Input name="name" id="name" defaultValue={profile ? profile.name: ''} />
+              </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input id="email" type="email" defaultValue="john.doe@example.com" />
-            </div>
+              {/* <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <Input id="email" type="email" defaultValue="john.doe@example.com" />
+              </div> */}
 
-            <div className="flex justify-end">
-              <Button variant="default">Save Changes</Button>
-            </div>
+              <div className="flex justify-end">
+                <Button variant="default" formAction={updatePersonal}>Save Changes</Button>
+              </div>
+            </form>
           </CardContent>
         </Card>
       </TabsContent>

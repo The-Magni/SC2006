@@ -1,5 +1,8 @@
 "use client"
 
+import { logout } from "@/lib/controllers/AuthController"
+import { useRouter } from "next/navigation"
+
 import {
   BadgeCheck,
   ChevronsUpDown,
@@ -37,6 +40,7 @@ export function NavUser({
   }
 }) {
   const { isMobile } = useSidebar()
+  const router = useRouter();
 
   return (
     <SidebarMenu>
@@ -78,11 +82,13 @@ export function NavUser({
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
-              <DropdownMenuItem>
+              <DropdownMenuItem onClick={() => {
+                router.push('/?layout=profile');
+              }}>
                 <BadgeCheck />
                 Account
               </DropdownMenuItem>
-              <DropdownMenuItem>
+              <DropdownMenuItem onClick={logout}>
                 <LogOut />
                 Log out
               </DropdownMenuItem>
