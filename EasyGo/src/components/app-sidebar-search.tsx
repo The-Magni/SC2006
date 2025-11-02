@@ -574,6 +574,7 @@ export function AppSidebarSearch({ options, loading, debouncedFetch, setOptions,
           endLat: endValue?.LATITUDE,
           startLon: startValue?.LONGITUDE,
           endLon: endValue?.LONGITUDE,
+          name: name,
           filterData: {
             durationWeight: filterWeights["time-taken"],
             walkingDistanceWeight: filterWeights["amount-of-walking"],

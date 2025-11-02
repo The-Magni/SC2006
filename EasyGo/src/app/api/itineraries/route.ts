@@ -1,6 +1,5 @@
 import { NextResponse, NextRequest } from "next/server";
 import { createClient } from "@/utils/supabase/server";
-import { QueryData } from "@supabase/supabase-js";
 
 interface RequestBody {
     start: string;
@@ -9,6 +8,7 @@ interface RequestBody {
     startLon: number;
     endLat: number;
     endLon: number;
+    name?: string;
     filterData: {
         durationWeight: number;
         walkingDistanceWeight: number;
@@ -56,7 +56,8 @@ export async function POST(request: NextRequest) {
             start_lat: body.startLat, 
             start_lon: body.startLon, 
             end_lat: body.endLat, 
-            end_lon: body.endLon 
+            end_lon: body.endLon,
+            name: body.name || '', 
         })
         .select()
         .single();

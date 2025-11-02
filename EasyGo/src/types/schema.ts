@@ -89,6 +89,7 @@ export type Database = {
           end_lat: number
           end_lon: number
           id: string
+          name: string | null
           start: string
           start_lat: number
           start_lon: number
@@ -99,6 +100,7 @@ export type Database = {
           end_lat: number
           end_lon: number
           id?: string
+          name?: string | null
           start: string
           start_lat: number
           start_lon: number
@@ -109,6 +111,7 @@ export type Database = {
           end_lat?: number
           end_lon?: number
           id?: string
+          name?: string | null
           start?: string
           start_lat?: number
           start_lon?: number
