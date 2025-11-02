@@ -4,13 +4,16 @@ import * as React from "react"
 import { RefObject, useState, useEffect } from "react";
 import { Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarRail, useSidebar } from "@/components/ui/sidebar"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider"
 import { NavUser } from "@/components/nav-user"
 import Autocomplete from "@mui/material/Autocomplete";
 import TextField from "@mui/material/TextField";
-import { Star, Car, Bus, Footprints, Circle, MapPinIcon, ListFilterIcon, LucideIcon, Loader2, DatabaseIcon, Bookmark, Search, Route } from "lucide-react";
+import { Star, Car, Bus, Footprints, Circle, MapPinIcon, ListFilterIcon, LucideIcon, Loader2, DatabaseIcon, Bookmark, Search, Route, Key } from "lucide-react";
 import { OneMapSearchResult } from "@/lib/onemap/onemapAutoFill";
 import type { MapDisplayHandle } from "@/components/map-display";
 import { ConvenienceFilter, GetItinerariesResponse, useItineraryData } from "@/hooks/itinerary-data"
@@ -278,6 +281,9 @@ export function AppSidebarSearch({ options, loading, debouncedFetch, setOptions,
   const { itinerary, setItinerary } = useSelectedItinerary();
   const [itineraryFilter, setItineraryFilter] = useState<ItineraryFilter | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [open, setOpen] = useState(false);
+  const [name, setName] = useState("");
+  const [error, setError] = useState("");
 
   useEffect(() => {
     if (itinerary) {
@@ -555,6 +561,7 @@ export function AppSidebarSearch({ options, loading, debouncedFetch, setOptions,
       alert("Failed to save route.");
     } finally {
       setIsSaving(false);
+      setOpen(false);
     }
   };
 
@@ -825,19 +832,44 @@ export function AppSidebarSearch({ options, loading, debouncedFetch, setOptions,
                   {/* 3. Add 'flex-1' to the original button group div */}
                   <div className="flex items-center gap-2 flex-1">
                     {/* Button 1: Save Route */}
-                    <Button
-                      className="w-full cursor-pointer flex items-center gap-2 flex-1"
-                      variant="outline"
-                      disabled={isSaving || !startValue || !endValue}
-                      onClick={handleSaveRoute}
-                    >
-                      {isSaving ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        <Bookmark className="h-4 w-4" />
-                      )}
-                      {isSaving ? "Saving..." : "Save Route"}
-                    </Button>
+                    <Dialog open={open} onOpenChange={setOpen}>
+                      <DialogTrigger asChild>
+                        <Button className="w-full cursor-pointer flex items-center gap-2 flex-1" variant="outline" disabled={isSaving || !startValue || !endValue}>
+                          <Bookmark className="mr-2 h-4 w-4" />
+                          Save Route
+                        </Button>
+                      </DialogTrigger>
+
+                      <DialogContent className="sm:max-w-[425px]">
+                        <DialogHeader>
+                          <DialogTitle>Save Route</DialogTitle>
+                          <DialogDescription>
+                            Enter a name for your route.
+                          </DialogDescription>
+                        </DialogHeader>
+
+                        <div className="grid gap-4 py-4">
+                          <div className="grid gap-2">
+                            <Label htmlFor="name">Route Name</Label>
+                            <Input
+                              id="name"
+                              type="text"
+                              value={name}
+                              onChange={(e) => setName(e.target.value)}
+                            />
+                          </div>
+
+                          {error && <p className="text-sm text-destructive">{error}</p>}
+                        </div>
+
+                        <DialogFooter>
+                          <Button variant="outline" onClick={() => setOpen(false)}>
+                            Cancel
+                          </Button>
+                          <Button onClick={handleSaveRoute}>Save</Button>
+                        </DialogFooter>
+                      </DialogContent>
+                    </Dialog>
 
                     {/* Button 2: Fetch Routes */}
                     <Button
