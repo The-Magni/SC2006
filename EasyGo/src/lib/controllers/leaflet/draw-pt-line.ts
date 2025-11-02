@@ -41,7 +41,12 @@ export async function drawPublicRoute(map: L.Map, data: PublicItineraryData): Pr
     const points = leg.geometry.map((p) => [p.lat, p.lng]) as [number, number][];
     allPoints.push(...points);
 
-    const poly = L.polyline(points, { color, weight: 4 }).addTo(map);
+    const poly = L.polyline(points, {
+    color: leg.mode === "WALK" ? "#ffffff" : color, // grey if walking
+    weight: leg.mode === "WALK" ? 3 : 4,
+    dashArray: leg.mode === "WALK" ? "6 8" : undefined, // dotted pattern for walking
+    opacity: 0.8,
+    }).addTo(map);
 
     // Compute segment midpoint
     const midIndex = Math.floor(points.length / 2);

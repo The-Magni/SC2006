@@ -6,7 +6,12 @@ export async function drawWalkingRoute(map: L.Map, data: WalkingItineraryData): 
     if (!L) return;
 
     // Draw walking path
-    const poly = L.polyline(data.polyLineCoords, { color: "green", weight: 4 }).addTo(map);
+    const poly = L.polyline(data.polyLineCoords, { 
+        weight: 3,            
+        dashArray: "6 8",     
+        opacity: 0.9, 
+    }
+    ).addTo(map);
 
     // Find midpoint of the path
     const midIndex = Math.floor(data.polyLineCoords.length / 2);
