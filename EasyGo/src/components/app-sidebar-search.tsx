@@ -486,7 +486,9 @@ export function AppSidebarSearch({ options, loading, debouncedFetch, setOptions,
   
   // Handle route card click to draw polyline on map
   const handleRouteClick = (itinerary: ItineraryData<BaseItineraryData>) => {
-    if (!mapRef?.current?.map) return;
+    if (!mapRef?.current?.map) {
+      return;
+    }
     const map = mapRef.current.map;
     mapRef.current.clearPolylines();
     drawItineraryLine(map, itinerary.mode, itinerary.data);
