@@ -19,6 +19,7 @@ export function AppSidebarDefault({ ...props }: React.ComponentProps<typeof Side
     <Sidebar collapsible="icon" {...props}>
         <SidebarHeader className="flex flex-row items-center gap-2 pl-3 pt-5">
           <Image
+            className="cursor-pointer"
             src="/favicon.svg"
             alt="EasyGo Logo"
             width={24}
@@ -28,7 +29,7 @@ export function AppSidebarDefault({ ...props }: React.ComponentProps<typeof Side
         }}
           />
           {!isCollapsed && (
-            <h1 className="text-base font-semibold" onClick={() => {
+            <h1 className="text-base font-semibold cursor-pointer" onClick={() => {
               router.push('/');
             }}>
               Easy<span className="text-blue-500">Go</span>
