@@ -5,19 +5,21 @@ import { NavUser } from "@/components/nav-user"
 import { Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupLabel, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarRail, useSidebar } from "@/components/ui/sidebar"
 import { Bookmark } from "lucide-react"
 import Image from "next/image"
-import Link from "next/link"
-import { useUser } from "@/hooks/useUser";
+import { useRouter } from "next/navigation"
+import { useUser } from "@/hooks/useUser"
 
 
 export function AppSidebarDefault({ ...props }: React.ComponentProps<typeof Sidebar>) {
-   const {state} = useSidebar();
+  const {state} = useSidebar();
   const isCollapsed = state === "collapsed"
   const [profile, setProfile] = useUser();
+  const router = useRouter();
 
   return (
     <Sidebar collapsible="icon" {...props}>
-      <Link href="/">
-        <SidebarHeader className="flex flex-row items-center gap-2 pl-3 pt-5">
+        <SidebarHeader className="flex flex-row items-center gap-2 pl-3 pt-5" onClick={() => {
+          router.push('/');
+        }}>
           <Image
             src="/favicon.svg"
             alt="EasyGo Logo"
@@ -30,18 +32,17 @@ export function AppSidebarDefault({ ...props }: React.ComponentProps<typeof Side
             </h1>
           )}
         </SidebarHeader>
-      </Link>
 
       <SidebarContent>
         <SidebarGroup className="mt-4">
           <SidebarGroupLabel>Navigation</SidebarGroupLabel>
           <SidebarMenu>
             <SidebarMenuItem>
-              <SidebarMenuButton asChild>
-                <a href="?layout=routes">
-                  <Bookmark className="mr-2 h-4 w-4" />
-                  <span>Saved Routes</span>
-                </a>
+              <SidebarMenuButton onClick={() => {
+                router.push('?layout=routes');
+              }}>
+                <Bookmark className="mr-2 h-4 w-4" />
+                <span>Saved Routes</span>
               </SidebarMenuButton>
             </SidebarMenuItem>
           </SidebarMenu>
