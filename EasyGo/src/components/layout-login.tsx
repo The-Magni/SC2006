@@ -1,3 +1,5 @@
+"use client"
+
 import { login } from "@/lib/controllers/AuthController";
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -5,8 +7,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Field, FieldDescription, FieldGroup, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import Link from "next/link";
+import { useState } from "react";
 
 export default function LayoutLogin({className, ...props}: React.ComponentProps<"div">) {
+  const [error, setError] = useState('');
   return (
     <div className="flex min-h-svh w-full items-center justify-center p-6 md:p-10">
       <div className="w-full max-w-sm">
@@ -42,9 +46,27 @@ export default function LayoutLogin({className, ...props}: React.ComponentProps<
                       </a> */}
                     </div>
                     <Input name="password" id="password" type="password" required />
+                    {
+                      error && <FieldDescription className="text-sm text-destructive">
+                        {error}
+                      </FieldDescription>
+                    }
+
                   </Field>
                   <Field>
-                    <Button type="submit" formAction={login}>Login</Button>
+                    <Button type="submit" formAction={async(formData) => {
+                        try {
+                          await login(formData);
+                          setError('');
+                        } catch (e) {
+                          if (e instanceof Error && !e.message.includes('NEXT'))
+                            setError(e.message);
+                          else
+                            setError('');
+                        }
+                      }}>
+                      Login
+                    </Button>
                     <FieldDescription className="text-center">
                       Don&apos;t have an account? <Link href="/?layout=signup">Sign up</Link>
                     </FieldDescription>
