@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
+import { InvalidCredentialsError } from '@/error'
 
 import { createClient } from '@/utils/supabase/server'
 
@@ -18,7 +19,7 @@ export async function login(formData: FormData) {
   const { error } = await supabase.auth.signInWithPassword(data)
 
   if (error) {
-    throw new Error(error.message);
+    throw new InvalidCredentialsError(error.message);
   }
 
   revalidatePath('/', 'layout')

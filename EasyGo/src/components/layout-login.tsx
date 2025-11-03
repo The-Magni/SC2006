@@ -8,6 +8,7 @@ import { Field, FieldDescription, FieldGroup, FieldLabel } from "@/components/ui
 import { Input } from "@/components/ui/input"
 import Link from "next/link";
 import { useState } from "react";
+import { InvalidCredentialsError } from "@/error";
 
 export default function LayoutLogin({className, ...props}: React.ComponentProps<"div">) {
   const [error, setError] = useState('');
@@ -59,7 +60,7 @@ export default function LayoutLogin({className, ...props}: React.ComponentProps<
                           await login(formData);
                           setError('');
                         } catch (e) {
-                          if (e instanceof Error && !e.message.includes('NEXT'))
+                          if (e instanceof InvalidCredentialsError || (e instanceof Error && e.name === 'InvalidCredentialsError'))
                             setError(e.message);
                           else
                             setError('');
