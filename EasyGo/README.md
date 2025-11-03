@@ -88,9 +88,9 @@ To develop a web application that consolidates multiple transport and environmen
 | **Convenience Scoring System** | Calculates a **customized score** based on weighted user preferences (time, walking distance, fare cost, carpark availability, etc.). |
 | **Real-Time Data Integration** | Uses **OneMap**, **LTA DataMall**, and **NEA Weather** APIs for live conditions. |
 | **Interactive Map Visualization** | Visualized using **Leaflet.js** with custom popups, carpark overlays, and selectable route layers. |
-| **Route Generation** | Developed entirely in **TypeScript** with strict mode — ensuring high code reliability and reusability. |
-| **Route Specfic Information Display** | Extensible architecture supports future modes (cycling, car-sharing) with minimal modification. |
-| **Save Route / Locations** | Extensible architecture supports future modes (cycling, car-sharing) with minimal modification. |
+| **Route Generation** | Generate routes which is retrieved from oneMap API |
+| **Route Specfic Information Display** | Displays information specfic to route (traffic incident / weather). |
+| **Save Route / Locations** | Saves locations for easy access |
 ## 🧠 App Design
 
 ### **Overview**
