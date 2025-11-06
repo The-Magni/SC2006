@@ -9,6 +9,7 @@ import LayoutRoutes from "@/components/layout-routes";
 import LayoutSignup from "@/components/layout-signup";
 import LayoutLogin from "@/components/layout-login";
 import LayoutProfile from "@/components/layout-profile";
+import LayoutResetPw from "@/components/layout-reset-pw";
 import type { MapDisplayHandle } from "@/components/map-display";
 import debounce from "lodash/debounce"
 
@@ -89,6 +90,10 @@ export default function Page() {
     return (
       <LayoutProfile />
     );
+  } else if (layout === 'reset-pw') {
+    return (
+      <LayoutResetPw />
+    )
   } else {
     return (
       <LayoutDefault

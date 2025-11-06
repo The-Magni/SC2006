@@ -1,11 +1,16 @@
+'use client'
+
 import { signup } from "@/lib/controllers/AuthController"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Field, FieldDescription, FieldGroup, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import Link from "next/link"
+import { useState } from "react"
+import { WeakPasswordError, weakPwMessage } from "@/error"
 
 export default function LayoutSignup({ ...props }: React.ComponentProps<typeof Card>) {
+  const [error, setError] = useState('');
   return (
     <div className="flex min-h-svh w-full items-center justify-center p-6 md:p-10">
       <div className="w-full max-w-sm">
@@ -43,6 +48,12 @@ export default function LayoutSignup({ ...props }: React.ComponentProps<typeof C
                   <FieldDescription>
                     Must be at least 8 characters long.
                   </FieldDescription>
+                        {
+                            error && <FieldDescription className="text-sm text-destructive">
+                                {error}
+                            </FieldDescription>
+                        }
+
                 </Field>
                 {/* <Field>
                   <FieldLabel htmlFor="confirm-password">
@@ -53,7 +64,20 @@ export default function LayoutSignup({ ...props }: React.ComponentProps<typeof C
                 </Field> */}
                 <FieldGroup>
                   <Field>
-                    <Button type="submit" formAction={signup}>Create Account</Button>
+                    <Button type="submit" formAction={async (formData) => {
+                        const msg = weakPwMessage(formData.get('password') as string);
+                        if (!msg) {
+                          try {
+                            await signup(formData);
+                            setError('');
+                          } catch (e) {
+                            if (e instanceof WeakPasswordError ||  (e instanceof Error && e.name === 'WeakPasswordError'))
+                              setError(e.message);
+                          }
+                        } else {
+                          setError(msg);
+                        }
+                    }}>Create Account</Button>
                     <FieldDescription className="px-6 text-center">
                       Already have an account? <Link href="/?layout=login">Sign in</Link>
                     </FieldDescription>

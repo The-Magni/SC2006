@@ -11,6 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { updatePersonal, updatePassword } from "@/lib/controllers/AuthController";
 import { useUser } from "@/hooks/useUser";
+import { weakPwMessage } from "@/error";
 
 export default function ProfileContent() {
   const [profile, setProfile] = useUser();
@@ -35,16 +36,20 @@ export default function ProfileContent() {
     // ----- YOUR API CALL HERE -----
     // await changePassword({ current, new: newPass });
     // ---------------------------------
-    try {
-      await updatePassword(current, newPass);
-      setError("");
-      setOpen(false);
-    } catch (error) {
-      if (error instanceof Error)
-        setError(error.message);
-      else
-        setError('Unknown error');
-    }
+    const msg = weakPwMessage(newPass);
+    if (!msg)
+      try {
+        await updatePassword(current, newPass);
+        setError("");
+        setOpen(false);
+      } catch (error) {
+        if (error instanceof Error)
+          setError(error.message);
+        else
+          setError('Unknown error');
+      }
+    else
+      setError(msg);
   };
 
   return (

@@ -122,17 +122,23 @@ export type Database = {
       users: {
         Row: {
           avatar: string
+          email: string
           id: string
+          login_failed_attempts: number
           name: string
         }
         Insert: {
           avatar?: string
+          email?: string
           id?: string
+          login_failed_attempts?: number
           name: string
         }
         Update: {
           avatar?: string
+          email?: string
           id?: string
+          login_failed_attempts?: number
           name?: string
         }
         Relationships: []

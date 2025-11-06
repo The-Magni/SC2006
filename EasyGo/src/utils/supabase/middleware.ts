@@ -41,7 +41,7 @@ export async function updateSession(request: NextRequest) {
   const layout = searchParams.get('layout');
   if (
     !user &&
-    !['login', 'signup'].includes(layout ?? '') &&
+    !['login', 'signup', 'reset-pw'].includes(layout ?? '') &&
     !request.nextUrl.pathname.startsWith('/api')
   ) {
     // no user, potentially respond by redirecting the user to the login page
