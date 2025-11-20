@@ -14,8 +14,11 @@ import { ExternalApiHandler, Incident } from "../boundary/ExternalApiHandler"
 import { calCrow, getStopNumber, calDistancePointLine } from "../utils"
 import { CarparkData } from "../boundary/ExternalApiHandler"
 import { ConvenienceScoreFilterPreference } from "../entityclass/ConvenienceScoreFilterPreference"
+<<<<<<< HEAD
 import { OneMapPTResponse, TransitLeg, WalkLeg } from "@/lib/onemap/deserializedClasses/dzPtRoutes"
 import { OneMapDrivingRouteResponse } from "@/lib/onemap/deserializedClasses/dzDrivingRoutes"
+=======
+>>>>>>> main
 import { Bound } from "../entityclass/ConvenienceScore"
 
 export type ItineraryScore<T extends BaseItinerary> = {
@@ -210,9 +213,14 @@ export class ItineraryController {
 						distance: distance
 					});
 				});
+<<<<<<< HEAD
 				const filteredNearestCarparks = nearestCarparks.filter(c => c.carpark.AvailableLots > 0);
 				filteredNearestCarparks.sort((a, b) => a.distance - b.distance);
 				return filteredNearestCarparks.slice(0, Math.min(3, filteredNearestCarparks.length));
+=======
+				nearestCarparks.sort((a, b) => a.distance - b.distance);
+				return nearestCarparks.slice(0, Math.min(3, nearestCarparks.length));
+>>>>>>> main
 			} catch (e) {
 				console.error(e);
 				throw new Error('Fail to get carpark data');
@@ -285,6 +293,7 @@ export class ItineraryController {
 
 	public async getTrafficIncidents(itinerary: DrivingItinerary): Promise<void> {
 		try {
+<<<<<<< HEAD
 			const uniqueIncidents = new Map<string, Incident>();
 			const incidents = await this.api.fetchTrafficIncident();
 			//const seen = new Set<string>();
@@ -316,9 +325,32 @@ export class ItineraryController {
 
 					if (distance < 0.03) { 
 						uniqueIncidents.set(key, incident);
+=======
+			const incidents = await this.api.fetchTrafficIncident();
+			const seen = new Set<string>();
+			const coords = itinerary.polylineCoords;
+			for (let i = 0; i < coords.length - 2; i++) {
+				for (const incident of incidents) {
+					if (seen.has(`${incident.Latitude}, ${incident.Longitude}`))
+						continue;
+					const distance = calDistancePointLine(
+						incident.Latitude, 
+						incident.Longitude,
+						coords[i][0],
+						coords[i][1],
+						coords[i+1][0],
+						coords[i+1][1]
+					);
+					if (distance < 50e-3) {
+						seen.add(`${incident.Latitude}, ${incident.Longitude}`); 
+						itinerary.incidents.push(incident);
+>>>>>>> main
 					}
 				}
 			}
+		} catch (e) {
+			console.error(e);
+			throw new Error('Fail to get traffic incidents data');
 		}
 		itinerary.incidents.push(...Array.from(uniqueIncidents.values()));
 

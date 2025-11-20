@@ -951,6 +951,65 @@ export function AppSidebarSearch({ options, loading, debouncedFetch, setOptions,
                 </Accordion>
               </div>
             )}
+<<<<<<< HEAD
+=======
+
+
+            
+            {!isCollapsed && (
+            <div className="px-2 pt-4">
+              <Button
+                className="w-full cursor-pointer"
+                variant="outline"
+                onClick={async () => {
+                  if (!startValue || !endValue) {
+                    alert("Please select both start and end points first.");
+                    return;
+                  }
+
+                  const body = {
+                    start: [parseFloat(startValue.LATITUDE), parseFloat(startValue.LONGITUDE)],
+                    end: [parseFloat(endValue.LATITUDE), parseFloat(endValue.LONGITUDE)],
+                    filterData: {
+                      durationWeight: filterWeights["time-taken"],
+                      walkingDistanceWeight: filterWeights["amount-of-walking"],
+                      noTransferWeight: filterWeights["number-of-transfers"],
+                      carparkAvailabilityWeight: filterWeights["carpark-availability"],
+                      busWaitTimeWeight: filterWeights["bus-wait-time"],
+                      platformDensityWeight: filterWeights["crowd-level"],
+                      fareWeight: filterWeights["fare-cost"],
+                    },
+                  };
+
+                  try {
+                    const res = await fetch("/api/test-convenience", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify(body),
+                    });
+
+                    if (!res.ok) {
+                      throw new Error(`Server error ${res.status}`);
+                    }
+                    const data = await res.json();
+                    console.log("Received itineraries:", data);
+
+                    setRouteResults(data);
+                  } catch (err) {
+                    console.error("Error fetching routes:", err);
+                  }
+                }}
+              >
+                Get Routes
+              </Button>
+
+              
+            </div>
+            )}
+            
+            {/* Temporary Button */}
+
+>>>>>>> main
           </SidebarGroupContent>
         </SidebarGroup>
                     

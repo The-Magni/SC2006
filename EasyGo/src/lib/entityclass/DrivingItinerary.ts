@@ -1,7 +1,11 @@
 import { BaseItinerary } from "./BaseItinerary"
 import { RouteLeg } from "./RouteLeg"
 import { Carpark } from "./Carpark"
+<<<<<<< HEAD
 import { decodePolyline } from "../controllers/leaflet/leaflethelper-controller"
+=======
+import { decodePolyline } from "../controllers/leaflethelper-controller"
+>>>>>>> main
 
 export class DrivingItinerary extends BaseItinerary {
   nearestCarpark?: Carpark
@@ -9,14 +13,27 @@ export class DrivingItinerary extends BaseItinerary {
   polylineCoords: [number, number][]
   viaRoute?: string
   userMode = "drive"
+<<<<<<< HEAD
   // summary: string;
+=======
+  summary: string;
+>>>>>>> main
 
   constructor(legs: RouteLeg[], fgs?: string, nearestCarpark?: Carpark, viaRoute?: string) {
     super(legs, "drive")
     this.nearestCarpark = nearestCarpark
     this.fullGeometryString = fgs
     this.viaRoute = viaRoute
+<<<<<<< HEAD
     this.name = "Driving Route " + viaRoute;
+=======
+    this.summary = `
+      Duration: ${(this.totalDuration / 60).toFixed(0)} mins<br>
+      Distance: ${(this.totalDistance / 1000).toFixed(2)} km<br>
+      ${this.legs.map(l => l.getDescription()).join("<br>")}
+    `
+
+>>>>>>> main
     if (fgs) {
       const decoded = decodePolyline(fgs)
       this.polylineCoords = decoded.map(p => [p.lat, p.lng]) as [number, number][]
@@ -28,6 +45,7 @@ export class DrivingItinerary extends BaseItinerary {
     }
   }
 
+<<<<<<< HEAD
   // public updateSummary() { // for when adding the walking itinerary to it
   //   this.summary = `
   //     Duration: ${(this.totalDuration / 60).toFixed(0)} mins<br>
@@ -38,6 +56,10 @@ export class DrivingItinerary extends BaseItinerary {
 
   public get summary() {
     return `
+=======
+  public updateSummary() { // for when adding the walking itinerary to it
+    this.summary = `
+>>>>>>> main
       Duration: ${(this.totalDuration / 60).toFixed(0)} mins<br>
       Distance: ${(this.totalDistance / 1000).toFixed(2)} km<br>
       ${this.legs.map(l => l.getDescription()).join("<br>")}

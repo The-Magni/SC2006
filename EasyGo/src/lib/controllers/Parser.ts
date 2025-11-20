@@ -1,4 +1,7 @@
+<<<<<<< HEAD
 import { Incident } from "../boundary/ExternalApiHandler";
+=======
+>>>>>>> main
 import { BaseItinerary } from "../entityclass/BaseItinerary";
 import { Carpark } from "../entityclass/Carpark";
 import { DrivingItinerary } from "../entityclass/DrivingItinerary";
@@ -14,15 +17,36 @@ interface LegData {
     geometry: {lat: number; lng: number;}[]
 }
 
+<<<<<<< HEAD
 export interface PublicItineraryData extends BaseItineraryData {
+=======
+export interface PublicItineraryData {
+    totalDuration: number;
+    totalDistance: number;
+    walkingDistance: number;
+    score: number;
+    summary: string;
+>>>>>>> main
     totalTransfers: number;
     totalFare: number;
     busWaitTime: number;
     platformDensity: number;
+<<<<<<< HEAD
     //name : string;
 }
 
 export interface DrivingItineraryData extends BaseItineraryData {
+=======
+    legs: LegData[];
+}
+
+export interface DrivingItineraryData {
+    totalDuration: number;
+    totalDistance: number;
+    walkingDistance: number;
+    score: number;
+    summary: string;
+>>>>>>> main
     polyLineCoords: [number, number][];
     viaRoute: string;
     nearestCarpark: {
@@ -32,16 +56,28 @@ export interface DrivingItineraryData extends BaseItineraryData {
         lng: number;
         availableLots: number;
     };
+<<<<<<< HEAD
     incidents: Incident[];
 }
 
 export interface WalkingItineraryData extends BaseItineraryData {
+=======
+}
+
+export interface WalkingItineraryData {
+    totalDuration: number;
+    totalDistance: number;
+    walkingDistance: number;
+    score: number;
+    summary: string;
+>>>>>>> main
     polyLineCoords: [number, number][];
 }
 
 export interface BaseItineraryData {
     totalDuration: number; 
     totalDistance: number;
+<<<<<<< HEAD
     walkingDistance: number;
     legs: LegData[];
     score: number;
@@ -53,13 +89,25 @@ export interface BaseItineraryData {
 }
 
 export interface ItineraryData<T extends BaseItineraryData> {
+=======
+    legs: LegData[];
+    score: number;
+    summary: string;
+}
+
+export interface ItineraryData<T> {
+>>>>>>> main
     mode: string;
     data: T;
 }
 
 export class Parser {
     private static deserializeRouteLeg(data: LegData): RouteLeg {
+<<<<<<< HEAD
         const leg = new RouteLeg('base');
+=======
+        const leg = new RouteLeg({});
+>>>>>>> main
         leg.mode = data.mode;
         leg.duration = data.duration;
         leg.distance = data.distance;
@@ -68,6 +116,7 @@ export class Parser {
         return leg;
     }
 
+<<<<<<< HEAD
     private static serializeRouteLeg(leg: RouteLeg): LegData {
         return {
             mode: leg.mode,
@@ -78,6 +127,8 @@ export class Parser {
         }
     }
 
+=======
+>>>>>>> main
     public static serializePublicItinerary(itinerary: PublicItinerary): ItineraryData<PublicItineraryData> {
         return {
             mode: itinerary.mode,
@@ -91,8 +142,18 @@ export class Parser {
                 totalFare: itinerary.totalFare || 0,
                 busWaitTime: itinerary.busWaitTime,
                 platformDensity: itinerary.platformDensity,
+<<<<<<< HEAD
                 legs: itinerary.legs.map(Parser.serializeRouteLeg),
                 name: itinerary.name
+=======
+                legs: itinerary.legs.map(l => ({
+                    mode: l.mode,
+                    duration: l.duration,
+                    distance: l.distance,
+                    description: l.description,
+                    geometry: l.geometry.map(p => ({lat: p.lat, lng: p.lng}))
+                }))
+>>>>>>> main
             }
         }
     }
@@ -114,12 +175,16 @@ export class Parser {
                     lat: itinerary.nearestCarpark?.lat || 0,
                     lng: itinerary.nearestCarpark?.lng || 0,
                     availableLots: itinerary.nearestCarpark?.availableLots || 0
+<<<<<<< HEAD
                 },
                 legs: itinerary.legs.map(Parser.serializeRouteLeg),
                 name: itinerary.name,
                 incidents: itinerary.incidents,
                 weather: itinerary.weather || ""
 
+=======
+                }
+>>>>>>> main
             }
         }
     }
@@ -133,11 +198,15 @@ export class Parser {
                 walkingDistance: itinerary.walkingDistance,
                 polyLineCoords: itinerary.polylineCoords,
                 summary: itinerary.summary,
+<<<<<<< HEAD
                 score: itinerary.convenienceScore.getScore(),
                 legs: itinerary.legs.map(Parser.serializeRouteLeg),
                 name: itinerary.name,
                 weather: itinerary.weather || ""
 
+=======
+                score: itinerary.convenienceScore.getScore()
+>>>>>>> main
             }
         }
     } 
@@ -148,11 +217,23 @@ export class Parser {
             data: {
                 totalDuration: itinerary.totalDuration,
                 totalDistance: itinerary.totalDistance,
+<<<<<<< HEAD
                 walkingDistance: itinerary.walkingDistance,
                 score: itinerary.convenienceScore.getScore(),
                 summary: itinerary.summary,
                 legs: itinerary.legs.map(Parser.serializeRouteLeg),
                 name: itinerary.name || "",
+=======
+                legs: itinerary.legs.map(l => ({
+                    mode: l.mode,
+                    duration: l.duration,
+                    distance: l.distance,
+                    description: l.description,
+                    geometry: l.geometry.map(p => ({lat: p.lat, lng: p.lng}))
+                })),
+                score: itinerary.convenienceScore.getScore(),
+                summary: itinerary.summary
+>>>>>>> main
             }
         }
     }
@@ -164,14 +245,21 @@ export class Parser {
         itinerary.totalDuration = data.data.totalDuration;
         itinerary.totalDistance = data.data.totalDistance;
         itinerary.convenienceScore.setScore(data.data.score);
+<<<<<<< HEAD
+=======
+        itinerary.summary = data.data.summary;        
+>>>>>>> main
         itinerary.totalTransfers = data.data.totalTransfers;
         itinerary.totalFare = data.data.totalFare;
         itinerary.busWaitTime = data.data.busWaitTime;
         itinerary.platformDensity = data.data.platformDensity;
         itinerary.legs = data.data.legs.map(data => Parser.deserializeRouteLeg(data));
         itinerary.walkingDistance = data.data.walkingDistance;
+<<<<<<< HEAD
         itinerary.name = data.data.name;
         
+=======
+>>>>>>> main
         return itinerary;
     }
 
@@ -182,13 +270,20 @@ export class Parser {
         itinerary.totalDuration = data.data.totalDuration;
         itinerary.totalDistance = data.data.totalDistance;
         itinerary.convenienceScore.setScore(data.data.score);
+<<<<<<< HEAD
+=======
+        itinerary.summary = data.data.summary;
+>>>>>>> main
         itinerary.polylineCoords = data.data.polyLineCoords;
         itinerary.viaRoute = data.data.viaRoute;
         itinerary.nearestCarpark = new Carpark(data.data.nearestCarpark);
         itinerary.walkingDistance = data.data.walkingDistance;
+<<<<<<< HEAD
         itinerary.legs = data.data.legs.map(Parser.deserializeRouteLeg);
         itinerary.name = data.data.name;
         itinerary.incidents = data.data.incidents;
+=======
+>>>>>>> main
         return itinerary;
     }
 
@@ -199,11 +294,17 @@ export class Parser {
         itinerary.totalDuration = data.data.totalDuration;
         itinerary.totalDistance = data.data.totalDistance;
         itinerary.convenienceScore.setScore(data.data.score);
+<<<<<<< HEAD
         itinerary.polylineCoords = data.data.polyLineCoords;
         itinerary.walkingDistance = data.data.walkingDistance;
         itinerary.name = data.data.name;
         itinerary.weather = data.data.weather || "";
         itinerary.legs = data.data.legs.map(Parser.deserializeRouteLeg);
+=======
+        itinerary.summary = data.data.summary;
+        itinerary.polylineCoords = data.data.polyLineCoords;
+        itinerary.walkingDistance = data.data.walkingDistance;
+>>>>>>> main
         return itinerary;
     }
 }

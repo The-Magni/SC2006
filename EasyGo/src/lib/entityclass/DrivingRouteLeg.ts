@@ -7,8 +7,13 @@ export class DrivingRouteLeg extends RouteLeg {
   distanceText: string
   direction: string
 
+<<<<<<< HEAD
   constructor(data: RouteInstruction) {
     super("DRIVE")
+=======
+  constructor(data: any, fullGeometry?: string) {
+    super({ mode: "DRIVE" })
+>>>>>>> main
 
     this.instruction = data[0] ?? ""
     this.roadName = data[1] ?? "Unnamed Road"

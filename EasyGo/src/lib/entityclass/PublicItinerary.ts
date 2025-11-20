@@ -5,13 +5,19 @@ export class PublicItinerary extends BaseItinerary {
   userMode?: string
   busWaitTime: number;
   platformDensity: number;
+<<<<<<< HEAD
   // summary: string;
 
+=======
+  summary: string;
+ 
+>>>>>>> main
   constructor(legs: RouteLeg[]) {
     super(legs, "pt")
     this.userMode = "pt"
     this.busWaitTime = 0; // init so that typescript doesnt complain
     this.platformDensity = 0; // same thing
+<<<<<<< HEAD
     // const details = this.legs.map((l) => l.getDescription()).join("<br>")
     // this.summary = `
     //   Public Transport<br>
@@ -26,8 +32,10 @@ export class PublicItinerary extends BaseItinerary {
   }
 
   public get summary() {
+=======
+>>>>>>> main
     const details = this.legs.map((l) => l.getDescription()).join("<br>")
-    return `
+    this.summary = `
       Public Transport<br>
       Duration: ${(this.totalDuration / 60).toFixed(0)} mins<br>
       Distance: ${(this.totalDistance / 1000).toFixed(2)} km<br>
@@ -38,6 +46,10 @@ export class PublicItinerary extends BaseItinerary {
 /*
 
   
+
+  public get mode() {
+    return 'PublicItinerary';
+  }
 
   static fromPT(data: any): PublicItinerary[] {
     const itineraries = data.plan?.itineraries || []
